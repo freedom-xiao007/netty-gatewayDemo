@@ -25,12 +25,12 @@ public class Client {
      * @param serverChannel
      * @throws InterruptedException
      */
-    static public void send(HttpRequest request, Channel serverChannel) throws InterruptedException {
+    static public void send(HttpRequest request, Channel serverChannel, String address, int port) throws InterruptedException {
         Bootstrap clientBootstrap = new Bootstrap();
         clientBootstrap.group(clientGroup)
                 .channel(NioSocketChannel.class)
                 .handler(new ClientInitializer(serverChannel));
-        Channel channel = clientBootstrap.connect("localhost", 8080).sync().channel();
+        Channel channel = clientBootstrap.connect(address, port).sync().channel();
         channel.writeAndFlush(request);
         channel.closeFuture().sync();
     }

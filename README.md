@@ -23,16 +23,41 @@
     - [Snoop](https://netty.io/4.1/xref/io/netty/example/http/snoop/package-summary.html) ‐ 构建自己的轻量级HTTP客户端和服务器,Http
     服务端和客户端示例，写网关的基础参考
     - Proxy：这个也在示例里面，代理的实现例子，对网关实现也有参考价值
+    
+## 功能简介
+&ensp;&ensp;&ensp;&ensp;类似于NGINX，将用户请求根据配置转发到相应的后端服务程序中。目前还不支持restful json的请求。
 
-## V1.0
-### 版本功能
+&ensp;&ensp;&ensp;&ensp;配置示例：
+
+```$xslt
+# 定义后端服务列表
+route.rule.hots = host1 host2
+
+# 定义host1后端服务的地址和端口
+route.rule.hosts.host1.ip = 192.168.101.105
+route.rule.hosts.host1.port = 8080
+
+# 定义host2后端服务的地址和端口
+route.rule.hosts.host2.ip = localhost
+route.rule.hosts.host2.port = 8081
+```
+
+&ensp;&ensp;&ensp;&ensp;目前采用前缀匹配，示例如下：
+
+- localhost:80/host2/greeting 
+    - 前缀为host2，得到转发目标机器地址和端口：localhost 8081
+    - 转发后端URL为：localhost:8081/greeting
+
+## 改动记录
+### V1.0
+#### 版本功能
 - 将 localhost:80/ 转到 localhost:8080/，并返回结果
 
-### 工程结构
+#### 工程结构
 - client：此模块负责将请求目标服务
 - server：负责接收用户请求
 
-### 代码说明
+#### 代码说明
 &ensp;&ensp;&ensp;&ensp;代码思路大致如下图：
 
 ![](./picture/v1.png)
@@ -42,8 +67,22 @@
 &ensp;&ensp;&ensp;&ensp;代码编写中一个难点是，server端和client端的结合。这里采用的是，在server端处理请求的时候，将当前channel传递到client handler中，这样client
  handle得到结果后，直接使用server channel返回结果即可。代码比较少也比较简单，这里就不贴了。
  
- ## TODO
- - server 调用client 请求的方式，是否存在线程过多创建问题或者浪费问题，需要进行排查和改善，或者改进两者之间的通信方式
- - 路由模块的编写：目前是硬编码，难看的很，后期改善成动态配置型的
- - 过滤模块的编写：对用户请求的前置处理和后置处理
+### V1.1
+#### 更新说明
+- 添加路由配置：com.gateway.util.Config
+- 添加路由转发: com.gateway.route.RouteTableSingleton
+
+#### 代码说明
+- com.gateway.util.Config: 读取properties配置文件
+- com.gateway.route.RouteTableSingleton：读取配置生成路由转发表
+ 
+## TODO
+- server 调用client 请求的方式，是否存在线程过多创建问题或者浪费问题，需要进行排查和改善，或者改进两者之间的通信方式
+- 过滤模块的编写：对用户请求的前置处理和后置处理
+- 前期主要为了实现功能，代码不够优雅，需要进行调整下
+- 目前网关客户端的请求好像只能处理HTTP 文本格式，不能处理json类型的，后面试试能不能支持json的
+ 
+ ## 参考链接
+ - [Java Properties file examples](https://mkyong.com/java/java-properties-file-examples/)
+ - [google/guava](https://github.com/google/guava)
 

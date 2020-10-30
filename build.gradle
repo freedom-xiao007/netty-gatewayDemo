@@ -2,6 +2,9 @@ plugins {
     id 'java'
 }
 
+apply plugin:'application'
+mainClassName = "com.gateway.server.Server"
+
 group 'GateWayDemo'
 version '1.0-SNAPSHOT'
 
@@ -16,4 +19,5 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 
     implementation "io.netty:netty-all:4.1.45.Final"
+    implementation("com.google.guava:guava:30.0-jre")
 }
