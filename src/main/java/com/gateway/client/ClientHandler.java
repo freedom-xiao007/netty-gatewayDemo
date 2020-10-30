@@ -9,6 +9,9 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
 
+/**
+ * @author lw
+ */
 public class ClientHandler extends ChannelInboundHandlerAdapter {
 
     private final Channel serverChannel;
@@ -17,6 +20,11 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         this.serverChannel = serverChannel;
     }
 
+    /**
+     * 读取目标服务的数据，调用server channel返回结果给用户
+     * @param ctx
+     * @param msg
+     */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof HttpResponse) {

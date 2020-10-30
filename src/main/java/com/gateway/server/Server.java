@@ -10,24 +10,23 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
 
+/**
+ * 程序入口，默认监听在80端口
+ */
 public class Server {
 
     static final int PORT = 80;
 
     public static void main(String[] args) throws InterruptedException {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        EventLoopGroup serverGroup = new NioEventLoopGroup();
         EventLoopGroup clientGroup = new NioEventLoopGroup();
 
         try {
-//            Bootstrap clientBootstrap = new Bootstrap();
-//            clientBootstrap.group(clientGroup)
-//                    .channel(NioSocketChannel.class)
-//                    .handler(new ClientInitializer());
             Client.init(clientGroup);
 
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            serverBootstrap.group(bossGroup, workerGroup)
+            serverBootstrap.group(bossGroup, serverGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ServerInitializer());
@@ -38,7 +37,7 @@ public class Server {
             channel.closeFuture().sync();
         } finally {
             bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
+            serverGroup.shutdownGracefully();
             clientGroup.shutdownGracefully();
         }
     }

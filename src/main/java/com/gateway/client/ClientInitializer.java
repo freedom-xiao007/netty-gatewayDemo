@@ -7,6 +7,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 
+/**
+ * @author lw
+ */
 public class ClientInitializer extends ChannelInitializer<SocketChannel> {
 
     private final Channel serverChannel;

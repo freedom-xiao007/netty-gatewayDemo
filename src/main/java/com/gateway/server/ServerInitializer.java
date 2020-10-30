@@ -1,12 +1,14 @@
 package com.gateway.server;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 
+/**
+ * @author lw
+ */
 public class ServerInitializer extends ChannelInitializer<SocketChannel> {
 
 
