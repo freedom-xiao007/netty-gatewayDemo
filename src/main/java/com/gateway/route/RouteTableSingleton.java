@@ -4,6 +4,9 @@ import com.google.common.base.Joiner;
 
 import java.util.*;
 
+/**
+ * @author lw
+ */
 public class RouteTableSingleton {
 
     private enum EnumSingleton {
@@ -27,6 +30,10 @@ public class RouteTableSingleton {
 
     private Map<String, Map<String, String>> table = new HashMap<>(16);
 
+    /**
+     * 从配置文件中读取数据初始化路由表
+     * @param properties
+     */
     public void initTable(Properties properties) {
         String hosts = (String) properties.get("route.rule.hots");
         List<String> sources = Arrays.asList(hosts.split(" "));
@@ -47,9 +54,14 @@ public class RouteTableSingleton {
         }
     }
 
+    /**
+     * 根据用户输入的源地址，得到路由表中对应的服务地址
+     * @param url 用户输入的源URL
+     * @return
+     */
     public Map<String, String> getTarget(String url) {
         List<String> path = Arrays.asList(url.split("/"));
-        System.out.println("path::" + path.toString());
+//        System.out.println("path::" + path.toString());
         String source = path.get(1);
         if (!table.containsKey(source)) {
             return null;

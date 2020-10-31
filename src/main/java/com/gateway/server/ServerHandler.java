@@ -1,7 +1,7 @@
 package com.gateway.server;
 
 import com.gateway.client.Client;
-import com.gateway.route.RouteTableSingleton;
+import com.gateway.route.RouteTable;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.HttpRequest;
 
@@ -27,15 +27,13 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws InterruptedException {
         if (msg instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) msg;
-//            System.out.println("Server::==========================");
-//            System.out.println(request.toString());
-//            System.out.println("method:" + request.method());
-//            System.out.println("uri :" + request.uri());
+//            showRequest(request);
 
             String source = request.uri();
-            Map<String, String> target = RouteTableSingleton.getInstance().getTarget(source);
-            System.out.println("route::" + target.toString());
+            Map<String, String> target = RouteTable.getTarget(source);
+//            System.out.println("route::" + target.toString());
             request.setUri(target.get("url"));
+
             Client.send(request, ctx.channel(), target.get("address"), Integer.parseInt(target.get("port")));
         }
     }
@@ -44,5 +42,12 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
+    }
+
+    private void showRequest(HttpRequest request) {
+        System.out.println("Server::==========================");
+        System.out.println(request.toString());
+        System.out.println("method:" + request.method());
+        System.out.println("uri :" + request.uri());
     }
 }

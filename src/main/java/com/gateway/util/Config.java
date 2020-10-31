@@ -1,8 +1,6 @@
 package com.gateway.util;
 
-import com.gateway.route.RouteTableSingleton;
-import com.gateway.server.Server;
-import jdk.internal.loader.Resource;
+import com.gateway.route.RouteTable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,6 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * @author lw
+ */
 public class Config {
 
     static private final Properties properties = new Properties();
@@ -27,7 +28,7 @@ public class Config {
         properties.load(input);
         System.out.println(properties.toString());
 
-        RouteTableSingleton.getInstance().initTable(properties);
+        RouteTable.initTable(properties);
     }
 
     static public String getProperty(String key) {

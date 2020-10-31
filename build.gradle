@@ -3,7 +3,7 @@ plugins {
 }
 
 apply plugin:'application'
-mainClassName = "com.gateway.server.Server"
+mainClassName = "com.gateway.GateWayApplication"
 
 group 'GateWayDemo'
 version '1.0-SNAPSHOT'
