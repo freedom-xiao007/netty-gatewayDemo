@@ -85,4 +85,7 @@ route.rule.hosts.host2.port = 8081
  ## 参考链接
  - [Java Properties file examples](https://mkyong.com/java/java-properties-file-examples/)
  - [google/guava](https://github.com/google/guava)
+ - [Netty中的基本组件及关系](https://blog.csdn.net/summerZBH123/article/details/79344226)
+ - [netty4客户端连接多个不同的服务端](https://blog.csdn.net/zsj777/article/details/102726029)
+ - [Netty 中的 handler 和 ChannelPipeline 分析](https://www.cnblogs.com/rickiyang/p/12686593.html)
 

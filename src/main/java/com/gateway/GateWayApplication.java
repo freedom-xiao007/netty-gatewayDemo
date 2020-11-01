@@ -19,17 +19,17 @@ public class GateWayApplication {
         System.out.println("Init property file");
         Config.init();
 
-        int port = 80;
-        if (Config.getProperty("port") != null) {
-            port = Integer.parseInt(Config.getProperty("port"));
-        }
+        int port = 90;
+//        if (Config.getProperty("port") != null) {
+//            port = Integer.parseInt(Config.getProperty("port"));
+//        }
 
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup serverGroup = new NioEventLoopGroup();
         EventLoopGroup clientGroup = new NioEventLoopGroup();
 
         try {
-            Client.init(clientGroup);
+//            Client.init(clientGroup);
             Server.run(bossGroup, serverGroup, port);
         } finally {
             bossGroup.shutdownGracefully();

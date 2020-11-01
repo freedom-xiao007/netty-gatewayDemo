@@ -20,4 +20,6 @@ dependencies {
 
     implementation "io.netty:netty-all:4.1.45.Final"
     implementation("com.google.guava:guava:30.0-jre")
+    compile 'com.sun.activation:javax.activation:1.2.0'
+    implementation "org.asynchttpclient:async-http-client:2.12.1"
 }

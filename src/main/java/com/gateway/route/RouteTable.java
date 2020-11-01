@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * 对路由表单例的封装，简化代码中使用
  * @author lw
  */
 public class RouteTable {

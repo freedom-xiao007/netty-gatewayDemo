@@ -1,12 +1,7 @@
 package com.gateway.client;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 
 /**
@@ -14,21 +9,35 @@ import io.netty.util.CharsetUtil;
  */
 public class ClientHandler extends ChannelInboundHandlerAdapter {
 
-    private final Channel serverChannel;
+    private Channel serverChannel;
 
-    public ClientHandler(Channel serverChannel) {
+    public ClientHandler(Channel serverChannel, HttpRequest request) {
         this.serverChannel = serverChannel;
     }
 
-    /**
-     * 读取目标服务的数据，调用server channel返回结果给用户
-     * @param ctx
-     * @param msg
-     */
+//    @Override
+//    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+//        System.out.println("Client Channel 创建注册");
+//    }
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-//        showResponse(ctx, msg);
-        serverChannel.writeAndFlush(msg);
+//        showResponse(msg);
+        serverChannel.writeAndFlush(msg).addListeners(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                if (future.isSuccess()) {
+                    ctx.channel().read();
+                } else {
+                    future.channel().close();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        serverChannel.flush();
         ctx.close();
     }
 
@@ -38,7 +47,8 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         ctx.close();
     }
 
-    private void showResponse(ChannelHandlerContext ctx, Object msg) {
+    private void showResponse(Object msg) {
+        System.out.println("Client::================================");
         if (msg instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) msg;
 
