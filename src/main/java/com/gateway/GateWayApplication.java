@@ -1,6 +1,7 @@
 package com.gateway;
 
 import com.gateway.client.Client;
+import com.gateway.filter.Filter;
 import com.gateway.server.Server;
 import com.gateway.util.Config;
 import io.netty.channel.EventLoopGroup;
@@ -19,22 +20,25 @@ public class GateWayApplication {
         System.out.println("Init property file");
         Config.init();
 
+        // 初始化监听端口
         int port = 80;
         if (Config.getProperty("port") != null) {
             port = Integer.parseInt(Config.getProperty("port"));
         }
 
+        // 初始化请求和返回的过滤器
+        Filter.initRequestFilter();
+        Filter.initResponseFilter();
+
+        // 初始化Server
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup serverGroup = new NioEventLoopGroup();
-        EventLoopGroup clientGroup = new NioEventLoopGroup();
 
         try {
-//            Client.init(clientGroup);
             Server.run(bossGroup, serverGroup, port);
         } finally {
             bossGroup.shutdownGracefully();
             serverGroup.shutdownGracefully();
-            clientGroup.shutdownGracefully();
         }
     }
 }

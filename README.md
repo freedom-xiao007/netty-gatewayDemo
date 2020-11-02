@@ -30,6 +30,7 @@
 - server模块：接收用户的请求，经过route模块解析后得到目标服务地址，client模块发送请求得到结果后，server返回给用户
 - route模块：读取配置文件，加载路由配置，将不同的请求发送到不同的服务器
 - client模块：异步请求客户端，返回请求结果给server模块
+- Filter模块：对请求和返回进行处理，内置将请求方法都设置为POST，返回头中添加GATEWAY信息
 
 &ensp;&ensp;&ensp;&ensp;类似于NGINX，将用户请求根据配置转发到相应的后端服务程序中。目前还不支持restful json的请求。
 
@@ -142,10 +143,72 @@ public class ClientTest {
     }
 }
 ```
+
+### V1.3
+#### 更新说明
+&ensp;&ensp;&ensp;&ensp;添加Request和Response的过滤处理，内置实现了将Request的方法都设置为POST，将Response的Header中增加信息
+
+#### 代码说明
+- FilterSingleton、Filter：过滤链配置保存，将相应的Response和Request过滤实现类添加到处理链，在过滤处理时就逐步调用类方法进行处理，有点类似Netty的Pipeline
+
+```java
+/**
+ * 过滤器
+ * @author lw
+ */
+public class Filter {
+    static final FilterSingleton filterSingleton = FilterSingleton.getInstance();
+
+    static private void addRequestFilter(RequestFilter requestFrontFilter) {
+        filterSingleton.registerRequestFrontFilter(requestFrontFilter);
+    }
+
+    static private void addResponseFilter(ResponseFilter responseBackendFilter) {
+        filterSingleton.registerResponseBackendFilter(responseBackendFilter);
+    }
+
+    /**
+     * 在这个方法中添加Request的过滤操作类,在启动函数中进行调用
+     */
+    static public void initRequestFilter() {
+        addRequestFilter(new MethodToPost());
+    }
+
+    /**
+     * 在这个方法中添加Response的过滤操作类，在启动函数中进行调用
+     */
+    static public void initResponseFilter() {
+        addResponseFilter(new AddGatewayInfo());
+    }
+
+    /**
+     * 遍历Request过滤操作链，对Request进行处理，在Server inbound接收到Request后进行调用
+     * @param request
+     */
+    static public void requestProcess(HttpRequest request) {
+        for (RequestFilter filter: filterSingleton.getRequestFrontFilterList()) {
+            filter.filter(request);
+        }
+    }
+
+    /**
+     * 调用Response过滤操作链，对Response进行处理，在Server outbound发送Response前进行调用
+     * @param response
+     */
+    static public void responseProcess(HttpResponse response) {
+        for (ResponseFilter filter: filterSingleton.getResponseBackendFilters()) {
+            filter.filter(response);
+        }
+    }
+}
+```
+
+- RequestFilter：Request过滤处理器接口，实现此接口对Request进行处理
+- ResponseFilter：Response过滤处理器接口，实现此接口对Response进行处理
  
 ## TODO
-- 过滤模块的编写：对用户请求的前置处理和后置处理
-- 异步客户端尝试编写
+- 由于是使用第三方的异步客户端，过滤模块没有很好的结合起来，需要尝试自己仿写一个
+- 服务器集群负载均衡配置实现
  
 ## 参考链接
 - [Java Properties file examples](https://mkyong.com/java/java-properties-file-examples/)

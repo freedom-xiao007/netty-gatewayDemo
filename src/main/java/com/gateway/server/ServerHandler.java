@@ -1,6 +1,7 @@
 package com.gateway.server;
 
 import com.gateway.client.Client;
+import com.gateway.filter.Filter;
 import com.gateway.route.RouteTable;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -20,30 +21,40 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
  */
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
-    /**
-     * 读取用户请求，调用client，发送请求到目标服务
-     * @param ctx
-     * @param msg
-     * @throws InterruptedException
-     */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws InterruptedException, ExecutionException {
         if (msg instanceof HttpRequest) {
+            // 获取Request，进行过滤器处理
             HttpRequest request = (HttpRequest) msg;
-//            showRequest(request);
+            System.out.println("Origin Request");
+            System.out.println(request);
+            Filter.requestProcess(request);
+            System.out.println("Filter Request");
+            System.out.println(request);
 
+            // 路由转发处理
+            String url = null;
             String source = request.uri();
             Map<String, String> target = RouteTable.getTarget(source);
-//            System.out.println(target.toString());
-            request.setUri(target.get("url"));
-            String address = target.get("address");
-            int port = Integer.parseInt(target.get("port"));
+            if (target == null) {
+                System.out.println("无法处理此请求，不在路由配置中");
+            } else {
+                request.setUri(target.get("url"));
+                String address = target.get("address");
+                int port = Integer.parseInt(target.get("port"));
+                url = "http://" + address + ":" + port + target.get("url");
+            }
 
-            String url = "http://" + address + ":" + port + target.get("url");
+            // 调用客户端，发送请求到服务器，获取数据
+            byte[] content = "Error, can't find server config".getBytes();
+            if (url != null) {
+                content = Client.getResponse(url);
+            }
 
+            // 构造Response
             boolean keepAlive = HttpUtil.isKeepAlive(request);
             FullHttpResponse response = new DefaultFullHttpResponse(request.protocolVersion(), OK,
-                    Unpooled.wrappedBuffer(Client.getResponse(url)));
+                    Unpooled.wrappedBuffer(content));
             response.headers()
                     .set(CONTENT_TYPE, TEXT_PLAIN)
                     .setInt(CONTENT_LENGTH, response.content().readableBytes());
@@ -57,6 +68,14 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 response.headers().set(CONNECTION, CLOSE);
             }
 
+            // 调用Response过滤处理
+            System.out.println("Origin Response");
+            System.out.println(response);
+            Filter.responseProcess(response);
+            System.out.println("Filter Response");
+            System.out.println(response);
+
+            // 返回Response数据给用户
             ctx.channel().writeAndFlush(response).addListeners(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {

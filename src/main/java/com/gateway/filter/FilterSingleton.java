@@ -26,14 +26,28 @@ public class FilterSingleton {
         return EnumSingleton.INSTANCE.getSingleton();
     }
 
-    List<RequestFrontFilter> requestFrontFilterList = new ArrayList<>();
-    List<ResponseBackendFilter> responseBackendFilters = new ArrayList<>();
+    /**
+     * Request过滤操作链
+     */
+    List<RequestFilter> requestFrontFilterList = new ArrayList<>();
+    /**
+     * Response过滤操作链
+     */
+    List<ResponseFilter> responseBackendFilters = new ArrayList<>();
 
-    public void registerRequestFrontFilter(RequestFrontFilter requestFrontFilter) {
+    public void registerRequestFrontFilter(RequestFilter requestFrontFilter) {
         this.requestFrontFilterList.add(requestFrontFilter);
     }
 
-    public void registerResponseBackendFilter(ResponseBackendFilter responseBackendFilter) {
+    public void registerResponseBackendFilter(ResponseFilter responseBackendFilter) {
         this.responseBackendFilters.add(responseBackendFilter);
+    }
+
+    public List<RequestFilter> getRequestFrontFilterList() {
+        return requestFrontFilterList;
+    }
+
+    public List<ResponseFilter> getResponseBackendFilters() {
+        return responseBackendFilters;
     }
 }
