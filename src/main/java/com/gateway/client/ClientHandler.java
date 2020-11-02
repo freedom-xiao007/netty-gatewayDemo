@@ -15,11 +15,6 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         this.serverChannel = serverChannel;
     }
 
-//    @Override
-//    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-//        System.out.println("Client Channel 创建注册");
-//    }
-
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
 //        showResponse(msg);

@@ -1,14 +1,10 @@
 package com.gateway.server;
 
 import com.gateway.client.Client;
-import com.gateway.client.ClientInitializer;
 import com.gateway.route.RouteTable;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
-import jdk.javadoc.internal.doclets.toolkit.taglets.UserTaglet;
-import org.asynchttpclient.Response;
 
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -23,14 +19,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
  * @author lw
  */
 public class ServerHandler extends ChannelInboundHandlerAdapter {
-
-    private Channel outboundChannel = null;
-    private static final byte[] CONTENT = { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd' };
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        final Channel serverOutbound = ctx.channel();
-    }
 
     /**
      * 读取用户请求，调用client，发送请求到目标服务
@@ -69,23 +57,16 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 response.headers().set(CONNECTION, CLOSE);
             }
 
-            ctx.channel().writeAndFlush(response);
-
-//            Bootstrap bootstrap = new Bootstrap();
-//            bootstrap.group(ctx.channel().eventLoop())
-//                    .channel(ctx.channel().getClass())
-//                    .handler(new ClientInitializer(ctx.channel(), request));
-//            ChannelFuture future = bootstrap.connect(address, port);
-//            future.addListener(new ChannelFutureListener() {
-//                @Override
-//                public void operationComplete(ChannelFuture future) throws Exception {
-//                    if (future.isSuccess()) {
-//                        future.channel().writeAndFlush(msg);
-//                    } else {
-//                        ctx.channel().close();
-//                    }
-//                }
-//            });
+            ctx.channel().writeAndFlush(response).addListeners(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess()) {
+                        ctx.channel().read();
+                    } else {
+                        future.channel().close();
+                    }
+                }
+            });
         }
     }
 
@@ -93,12 +74,5 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
-    }
-
-    private void showRequest(HttpRequest request) {
-        System.out.println("Server::==========================");
-        System.out.println(request.toString());
-        System.out.println("method:" + request.method());
-        System.out.println("uri :" + request.uri());
     }
 }

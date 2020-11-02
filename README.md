@@ -25,6 +25,12 @@
     - Proxy：这个也在示例里面，代理的实现例子，对网关实现也有参考价值
     
 ## 功能简介
+&ensp;&ensp;&ensp;&ensp;目前系统分为三个模块：server模块、route模块、client模块
+
+- server模块：接收用户的请求，经过route模块解析后得到目标服务地址，client模块发送请求得到结果后，server返回给用户
+- route模块：读取配置文件，加载路由配置，将不同的请求发送到不同的服务器
+- client模块：异步请求客户端，返回请求结果给server模块
+
 &ensp;&ensp;&ensp;&ensp;类似于NGINX，将用户请求根据配置转发到相应的后端服务程序中。目前还不支持restful json的请求。
 
 &ensp;&ensp;&ensp;&ensp;配置示例：
@@ -47,6 +53,18 @@ route.rule.hosts.host2.port = 8081
 - localhost:80/host2/greeting 
     - 前缀为host2，得到转发目标机器地址和端口：localhost 8081
     - 转发后端URL为：localhost:8081/greeting
+    
+&ensp;&ensp;&ensp;&ensp;目前性能上稍有欠缺，但稳定性比以前好上很多，下面是性能对比
+
+- 1.不通过网关，直接访问服务：5000左右的RPS
+- 2.通过网关，但没有路由模块，也就是直接代理：5000左右的RPS
+- 3.通过网关，有路由模块：4200左右的RPS
+
+&ensp;&ensp;&ensp;&ensp;性能稍差的原因：1和2代码都能做到Channel是一个无状态的，也会能直接复用，经过测试起到4-8个Channel线程就能hold。
+
+&ensp;&ensp;&ensp;&ensp;但3的情况，很多情况下需要保留当前的server outbound的状态，因为后台服务不是一个，所有大部分情况下不能复用，频繁的销毁和启动线程，导致性能大幅度下降。
+
+&ensp;&ensp;&ensp;&ensp;目前程序client采用的是异步请求客户端（github开源的，后面自己写一个试试），与server模块解耦。经过的链路和处理也比较多，虽然性能下降是正常，但感觉还是有点多，再调整试试
 
 ## 改动记录
 ### V1.0
@@ -75,17 +93,69 @@ route.rule.hosts.host2.port = 8081
 #### 代码说明
 - com.gateway.util.Config: 读取properties配置文件
 - com.gateway.route.RouteTableSingleton：读取配置生成路由转发表
+
+### V1.2
+#### 更新说明
+&ensp;&ensp;&ensp;&ensp;这个版本进行压测和调整，代码在最开始时稳定性不行，在RPS在1700左右程序就会崩溃
+
+&ensp;&ensp;&ensp;&ensp;经过再三的调整和尝试，稳定性解决了，但在之前的代码架构下RPS只在700左右
+
+&ensp;&ensp;&ensp;&ensp;在v1.0的架构下，Client Channel需要保留当前的Server outbound，已便于在获取结果后返回数据给用户，所有Client是有状态的
+
+&ensp;&ensp;&ensp;&ensp;但目前网关需要请求不同的后台服务，服务的地址和端口可能不一样，这样Client Channel无法复用，导致Client线程的频繁创建和销毁，严重影响了网关性能
+
+&ensp;&ensp;&ensp;&ensp;想到的解决办法就是使用Client异步请求，Client channel 不与Server outbound进行绑定，这样实现了解耦和Client的线程复用
+
+&ensp;&ensp;&ensp;&ensp;但异步客户端自己目前实现有点困难，就使用了一个第三方的，起码效果看起来比之前好多了，后面自己再仿照写一个试试
+
+&ensp;&ensp;&ensp;&ensp;下面是各个改动的性能说明：
+
+- 通过网关，直接访问服务：5000左右的RPS
+- 通过网关，但没有路由模块，也就是直接代理：5000左右的RPS
+- 原始版本：在RPS在1700左右崩溃
+- 改动版本：稳定性可以，但RPS只有700左右
+- 异步客户端，通过路由模块：4200左右的RPS
+
+#### 代码说明
+&ensp;&ensp;&ensp;&ensp;Client替换为第三方的异步客户端，直接在Server Handler中获取服务器请求后返回
+
+&ensp;&ensp;&ensp;&ensp;异步客户端依赖：
+
+```java
+implementation "org.asynchttpclient:async-http-client:2.12.1"
+```
+
+&ensp;&ensp;&ensp;&ensp;异步客户端的简单使用：
+
+```java
+public class ClientTest {
+
+    @Test
+    public void asyncClientTest() throws ExecutionException, InterruptedException {
+        AsyncHttpClient asyncHttpClient = asyncHttpClient();
+        Future<Response> responseFuture = asyncHttpClient.prepareGet("http://192.168.101.105:8080/").execute();
+        Response response = responseFuture.get();
+        System.out.println(response.toString());
+        System.out.println(response.getStatusCode());
+        System.out.println(response.getHeaders().toString());
+        System.out.println(response.getResponseBody().toString().getBytes());
+    }
+}
+```
  
 ## TODO
-- server 调用client 请求的方式，是否存在线程过多创建问题或者浪费问题，需要进行排查和改善，或者改进两者之间的通信方式
 - 过滤模块的编写：对用户请求的前置处理和后置处理
-- 前期主要为了实现功能，代码不够优雅，需要进行调整下
-- 目前网关客户端的请求好像只能处理HTTP 文本格式，不能处理json类型的，后面试试能不能支持json的
+- 异步客户端尝试编写
  
- ## 参考链接
- - [Java Properties file examples](https://mkyong.com/java/java-properties-file-examples/)
- - [google/guava](https://github.com/google/guava)
- - [Netty中的基本组件及关系](https://blog.csdn.net/summerZBH123/article/details/79344226)
- - [netty4客户端连接多个不同的服务端](https://blog.csdn.net/zsj777/article/details/102726029)
- - [Netty 中的 handler 和 ChannelPipeline 分析](https://www.cnblogs.com/rickiyang/p/12686593.html)
+## 参考链接
+- [Java Properties file examples](https://mkyong.com/java/java-properties-file-examples/)
+- [google/guava](https://github.com/google/guava)
+- [Netty中的基本组件及关系](https://blog.csdn.net/summerZBH123/article/details/79344226)
+- [netty4客户端连接多个不同的服务端](https://blog.csdn.net/zsj777/article/details/102726029)
+- [Netty 中的 handler 和 ChannelPipeline 分析](https://www.cnblogs.com/rickiyang/p/12686593.html)
+- [一个简单可参考的API网关架构设计](https://www.infoq.cn/article/api-gateway-architecture-design)
+- [AsyncHttpClient/async-http-client](https://github.com/AsyncHttpClient/async-http-client)
+- [Netty中ChannelHandler共享数据的方式](https://blog.csdn.net/u013721793/article/details/51204029)
+- [In Netty 4, what's the difference between ctx.close and ctx.channel.close?](https://stackoverflow.com/questions/21240981/in-netty-4-whats-the-difference-between-ctx-close-and-ctx-channel-close)
+- [How to write a high performance Netty Client](https://stackoverflow.com/questions/8444267/how-to-write-a-high-performance-netty-client)
 

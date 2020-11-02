@@ -16,8 +16,8 @@ public class ServerInitializer extends ChannelInitializer<SocketChannel> {
     @Override
     protected void initChannel(SocketChannel socketChannel) throws Exception {
         ChannelPipeline pipeline = socketChannel.pipeline();
-        pipeline.addLast(new HttpRequestDecoder());
         pipeline.addLast(new HttpResponseEncoder());
+        pipeline.addLast(new HttpRequestDecoder());
         pipeline.addLast(new ServerHandler());
 //        pipeline.addLast(new LoggingHandler(LogLevel.ERROR));
     }
