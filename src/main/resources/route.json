@@ -1,0 +1,21 @@
+{
+  "server": {
+    "group1": [
+      "http://192.168.101.105:8080"
+    ],
+    "group2": [
+      "http://192.168.101.105:8080",
+      "http://192.168.101.109:8080"
+    ]
+  },
+  "route": [
+    {
+      "source": "/greeting",
+      "target": "group1"
+    },
+    {
+      "source": "/hello",
+      "target": "group2"
+    }
+  ]
+}

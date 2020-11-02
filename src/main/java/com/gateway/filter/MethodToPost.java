@@ -9,6 +9,10 @@ import io.netty.handler.codec.http.HttpRequest;
  */
 public class MethodToPost implements RequestFilter {
 
+    /**
+     * 设置Request的Method为POST
+     * @param request
+     */
     @Override
     public void filter(HttpRequest request) {
         request.setMethod(HttpMethod.POST);

@@ -22,4 +22,5 @@ dependencies {
     implementation("com.google.guava:guava:30.0-jre")
     compile 'com.sun.activation:javax.activation:1.2.0'
     implementation "org.asynchttpclient:async-http-client:2.12.1"
+    implementation 'com.google.code.gson:gson:2.8.6'
 }

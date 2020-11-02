@@ -1,7 +1,12 @@
 package com.gateway.route;
 
 import com.google.common.base.Joiner;
+import com.google.gson.Gson;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.*;
 
 /**
@@ -29,11 +34,18 @@ public class RouteTableSingleton {
     }
 
     private Map<String, Map<String, String>> table = new HashMap<>(16);
+    private Map<String, List<String>> server;
+    private List<Map<String, String>> route;
+    /**
+     * 负载均衡：轮询算法
+     */
+    private Rotation rotationBalance;
 
     /**
      * 从配置文件中读取数据初始化路由表
      * @param properties
      */
+    @Deprecated
     public void initTable(Properties properties) {
         String hosts = (String) properties.get("route.rule.hots");
         List<String> sources = Arrays.asList(hosts.split(" "));
@@ -59,6 +71,7 @@ public class RouteTableSingleton {
      * @param url 用户输入的源URL
      * @return
      */
+    @Deprecated
     public Map<String, String> getTarget(String url) {
         List<String> path = Arrays.asList(url.split("/"));
 //        System.out.println("path::" + path.toString());
@@ -71,5 +84,50 @@ public class RouteTableSingleton {
         target.putAll(table.get(source));
         target.put("url", "/" + Joiner.on("/").join(path.subList(2, path.size())));
         return target;
+    }
+
+    /**
+     * 根据源URL，获取路由中的 目标服务器地址，内置负载均衡
+     * @param url
+     * @return
+     */
+    public String getTargetUrl(String url) {
+        for (Map<String, String> table: route) {
+            String source = table.get("source");
+            int index = url.indexOf(source);
+            if (index == 0) {
+                // 获取负载均衡后的服务器目标地址
+                String target = rotationBalance.get(server, table.get("target"));
+                return target + url.substring(source.length());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 读取JSON配置文件，初始化路由和负载均衡设置
+     */
+    public void readJsonConfig() {
+        String fileName = "F:\\Code\\Java\\GateWayDemo\\src\\main\\resources\\route.json";
+//        String fileName = "/root/code/java/GateWayDemo/src/main/resources/route.json";
+        Gson gson = new Gson();
+        try (Reader reader = new FileReader(fileName)) {
+            Map<String, Object> config = gson.fromJson(reader, Map.class);
+            System.out.println(config.toString());
+
+            server = (Map<String, List<String>>) config.get("server");
+            System.out.println(server);
+
+            route = (List<Map<String, String>>) config.get("route");
+            System.out.println(route);
+
+            // 初始化负载均衡
+            rotationBalance = new Rotation(server);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }

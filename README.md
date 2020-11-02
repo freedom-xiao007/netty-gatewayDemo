@@ -24,6 +24,14 @@
     服务端和客户端示例，写网关的基础参考
     - Proxy：这个也在示例里面，代理的实现例子，对网关实现也有参考价值
     
+    
+    
+    
+## 相关模块
+&ensp;&ensp;&ensp;&ensp;当前的网关大体模块如下图：
+
+![](https://github.com/lw1243925457/JAVA-000/blob/main/Week_03/gateway.png)
+    
 ## 功能简介
 &ensp;&ensp;&ensp;&ensp;目前系统分为三个模块：server模块、route模块、client模块
 
@@ -36,36 +44,64 @@
 
 &ensp;&ensp;&ensp;&ensp;配置示例：
 
-```$xslt
-# 定义后端服务列表
-route.rule.hots = host1 host2
-
-# 定义host1后端服务的地址和端口
-route.rule.hosts.host1.ip = 192.168.101.105
-route.rule.hosts.host1.port = 8080
-
-# 定义host2后端服务的地址和端口
-route.rule.hosts.host2.ip = localhost
-route.rule.hosts.host2.port = 8081
+```json5
+{
+  "server": {
+    "group1": [
+      "http://192.168.101.105:8080"
+    ],
+    "group2": [
+      "http://192.168.101.105:8080",
+      "http://192.168.101.109:8080"
+    ]
+  },
+  "route": [
+    {
+      "source": "/greeting",
+      "target": "group1"
+    },
+    {
+      "source": "/hello",
+      "target": "group2"
+    }
+  ]
+}
 ```
 
 &ensp;&ensp;&ensp;&ensp;目前采用前缀匹配，示例如下：
 
-- localhost:80/host2/greeting 
-    - 前缀为host2，得到转发目标机器地址和端口：localhost 8081
-    - 转发后端URL为：localhost:8081/greeting
+- localhost:80/greeting/getSome
+    - 前缀匹配到 /greeting，得到转发目标机器机器为group1，则将发送请求到："http://192.168.101.105:8080",多个服务器的会就会轮询发送
+    - 转发后端URL为："http://192.168.101.105:8080/getSome"
     
-&ensp;&ensp;&ensp;&ensp;目前性能上稍有欠缺，但稳定性比以前好上很多，下面是性能对比
+## 相关测试
+&ensp;&ensp;&ensp;&ensp;这里压测一下网关，基本命令如下，在2分钟左右基本能得到稳定值，不再大幅度抖动
 
-- 1.不通过网关，直接访问服务：5000左右的RPS
-- 2.通过网关，但没有路由模块，也就是直接代理：5000左右的RPS
-- 3.通过网关，有路由模块：4200左右的RPS
+```shell script
+sb -u http://localhost:80/greeting -c 20 -N 120
+```
 
-&ensp;&ensp;&ensp;&ensp;性能稍差的原因：1和2代码都能做到Channel是一个无状态的，也会能直接复用，经过测试起到4-8个Channel线程就能hold。
+&ensp;&ensp;&ensp;&ensp;得到的相关结果如下：
 
-&ensp;&ensp;&ensp;&ensp;但3的情况，很多情况下需要保留当前的server outbound的状态，因为后台服务不是一个，所有大部分情况下不能复用，频繁的销毁和启动线程，导致性能大幅度下降。
+|测试条件说明                       |测试结果                          |
+|----------                       |---------------------------------|
+|不用网关直接访问单服务               | RPS: 5887.5 (requests/second)   |
+|经过网关访问单服务                   | RPS: 5191.9 (requests/second)  |
+|经过网关访问两个服务器（负载均衡）     | RPS: 5664.5 (requests/second)   |
 
-&ensp;&ensp;&ensp;&ensp;目前程序client采用的是异步请求客户端（github开源的，后面自己写一个试试），与server模块解耦。经过的链路和处理也比较多，虽然性能下降是正常，但感觉还是有点多，再调整试试
+&ensp;&ensp;&ensp;&ensp;经过上面的测试数据可以发现，经过网关性能是要差一些的。感觉这样应该是正常的，毕竟网络链路都要多走一步。
+
+&ensp;&ensp;&ensp;&ensp;如果后端服务的host和port相同的话，那就相当于代理了，经过测试，如果简单代理的话，性能几乎是相同的。
+
+&ensp;&ensp;&ensp;&ensp;目前网关假设是后端服务会有不同的ip地址和端口，所以Server端测试的时候线程新建和销毁比代理要多，而且客户端必须是异步的，有状态的客户端会导致更多的线程新建和销毁。
+
+&ensp;&ensp;&ensp;&ensp
+;经过网关访问两个服务器（负载均衡）的测试结果不是预料中的，想象中应该是两倍的性能，但这里要考虑到网关的性能是否能够支撑了。由于机器的性能基本上已经打满了，这里就没法去测试这个准确的。但可以看到相对于单服务器，两个服务器的性能是有所提升的。
+
+&ensp;&ensp;&ensp;&ensp;目前来看功能上是达到作业要求了，但性能上可能有些不足。做下来感觉网关这个东西还有很多很多的点，这里只是一小部分，不简单。
+
+
+
 
 ## 改动记录
 ### V1.0
@@ -205,10 +241,19 @@ public class Filter {
 
 - RequestFilter：Request过滤处理器接口，实现此接口对Request进行处理
 - ResponseFilter：Response过滤处理器接口，实现此接口对Response进行处理
+
+### V1.4
+#### 更新说明
+- 加入负载均衡：使用基本的轮询算法
+- 重构路由配置：使用JSON配置文件
+
+#### 代码说明
+- LoadBalance：负载均衡算法接口
+- Rotation：轮询负载均衡算法
  
 ## TODO
 - 由于是使用第三方的异步客户端，过滤模块没有很好的结合起来，需要尝试自己仿写一个
-- 服务器集群负载均衡配置实现
+- 补习相关知识，进一步完善网关
  
 ## 参考链接
 - [Java Properties file examples](https://mkyong.com/java/java-properties-file-examples/)

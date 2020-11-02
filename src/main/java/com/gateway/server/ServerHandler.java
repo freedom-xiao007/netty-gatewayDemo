@@ -26,24 +26,16 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof HttpRequest) {
             // 获取Request，进行过滤器处理
             HttpRequest request = (HttpRequest) msg;
-            System.out.println("Origin Request");
-            System.out.println(request);
+//            System.out.println("Origin Request");
+//            System.out.println(request);
             Filter.requestProcess(request);
-            System.out.println("Filter Request");
-            System.out.println(request);
+//            System.out.println("Filter Request");
+//            System.out.println(request);
 
-            // 路由转发处理
-            String url = null;
+            // 路由转发处理,负载均衡
             String source = request.uri();
-            Map<String, String> target = RouteTable.getTarget(source);
-            if (target == null) {
-                System.out.println("无法处理此请求，不在路由配置中");
-            } else {
-                request.setUri(target.get("url"));
-                String address = target.get("address");
-                int port = Integer.parseInt(target.get("port"));
-                url = "http://" + address + ":" + port + target.get("url");
-            }
+            String url = RouteTable.getTargetUrl(source);
+//            System.out.println(source + "::" + url);
 
             // 调用客户端，发送请求到服务器，获取数据
             byte[] content = "Error, can't find server config".getBytes();
@@ -69,11 +61,11 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             }
 
             // 调用Response过滤处理
-            System.out.println("Origin Response");
-            System.out.println(response);
+//            System.out.println("Origin Response");
+//            System.out.println(response);
             Filter.responseProcess(response);
-            System.out.println("Filter Response");
-            System.out.println(response);
+//            System.out.println("Filter Response");
+//            System.out.println(response);
 
             // 返回Response数据给用户
             ctx.channel().writeAndFlush(response).addListeners(new ChannelFutureListener() {
