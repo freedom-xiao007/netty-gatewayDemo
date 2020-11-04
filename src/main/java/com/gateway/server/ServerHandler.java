@@ -7,7 +7,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
@@ -19,10 +18,10 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 /**
  * @author lw
  */
-public class ServerHandler extends ChannelInboundHandlerAdapter {
+public class ServerHandler extends SimpleChannelInboundHandler {
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws InterruptedException, ExecutionException {
+    public void channelRead0(ChannelHandlerContext ctx, Object msg) throws InterruptedException, ExecutionException {
         if (msg instanceof HttpRequest) {
             // 获取Request，进行过滤器处理
             HttpRequest request = (HttpRequest) msg;

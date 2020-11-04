@@ -33,11 +33,11 @@
 ![](https://github.com/lw1243925457/JAVA-000/blob/main/Week_03/gateway.png)
     
 ## 功能简介
-&ensp;&ensp;&ensp;&ensp;目前系统分为三个模块：server模块、route模块、client模块
+&ensp;&ensp;&ensp;&ensp;目前系统分为四个模块：server模块、route模块、client模块
 
 - server模块：接收用户的请求，经过route模块解析后得到目标服务地址，client模块发送请求得到结果后，server返回给用户
 - route模块：读取配置文件，加载路由配置，将不同的请求发送到不同的服务器
-- client模块：异步请求客户端，返回请求结果给server模块
+- client模块：同步非阻塞请求客户端，返回请求结果给server模块；目前使用第三方提供的，自己实现的性能不行
 - Filter模块：对请求和返回进行处理，内置将请求方法都设置为POST，返回头中添加GATEWAY信息
 
 &ensp;&ensp;&ensp;&ensp;类似于NGINX，将用户请求根据配置转发到相应的后端服务程序中。目前还不支持restful json的请求。

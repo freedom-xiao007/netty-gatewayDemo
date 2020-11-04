@@ -16,6 +16,9 @@ public class Server {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(bossGroup, serverGroup)
                 .option(ChannelOption.SO_REUSEADDR, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.AUTO_CLOSE, true)
+                .option(ChannelOption.SO_BACKLOG, 1024)
                 .channel(NioServerSocketChannel.class)
 //                .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new ServerInitializer());
