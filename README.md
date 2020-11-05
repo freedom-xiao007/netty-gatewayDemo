@@ -141,9 +141,9 @@ sb -u http://localhost:80/greeting -c 20 -N 120
 
 &ensp;&ensp;&ensp;&ensp;但目前网关需要请求不同的后台服务，服务的地址和端口可能不一样，这样Client Channel无法复用，导致Client线程的频繁创建和销毁，严重影响了网关性能
 
-&ensp;&ensp;&ensp;&ensp;想到的解决办法就是使用Client异步请求，Client channel 不与Server outbound进行绑定，这样实现了解耦和Client的线程复用
+&ensp;&ensp;&ensp;&ensp;想到的解决办法就是使用Client同步非阻塞请求，Client channel 不与Server outbound进行绑定，这样实现了解耦和Client的线程复用
 
-&ensp;&ensp;&ensp;&ensp;但异步客户端自己目前实现有点困难，就使用了一个第三方的，起码效果看起来比之前好多了，后面自己再仿照写一个试试
+&ensp;&ensp;&ensp;&ensp;但同步非阻塞客户端自己目前实现有点困难，就使用了一个第三方的，起码效果看起来比之前好多了，后面自己再仿照写一个试试
 
 &ensp;&ensp;&ensp;&ensp;下面是各个改动的性能说明：
 
@@ -151,7 +151,7 @@ sb -u http://localhost:80/greeting -c 20 -N 120
 - 通过网关，但没有路由模块，也就是直接代理：5000左右的RPS
 - 原始版本：在RPS在1700左右崩溃
 - 改动版本：稳定性可以，但RPS只有700左右
-- 异步客户端，通过路由模块：4200左右的RPS
+- 同步非阻塞客户端，通过路由模块：4200左右的RPS
 
 #### 代码说明
 &ensp;&ensp;&ensp;&ensp;Client替换为第三方的异步客户端，直接在Server Handler中获取服务器请求后返回
