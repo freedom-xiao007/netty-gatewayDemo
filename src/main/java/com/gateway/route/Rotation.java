@@ -3,8 +3,6 @@ package com.gateway.route;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * 负载均衡：轮询算法
@@ -12,7 +10,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class Rotation implements LoadBalance {
 
-    public ConcurrentMap<String, Integer> serverFlag;
+    public Map<String, Integer> serverFlag;
     public Map<String, Integer> serverAmount;
 
     /**
@@ -20,7 +18,7 @@ public class Rotation implements LoadBalance {
      * @param server
      */
     public Rotation(Map<String, List<String>> server) {
-        serverFlag = new ConcurrentHashMap<>(server.size());
+        serverFlag = new HashMap<>(server.size());
         serverAmount = new HashMap<>(server.size());
         for (String serverGroup: server.keySet()) {
             serverFlag.put(serverGroup, 0);
@@ -37,12 +35,15 @@ public class Rotation implements LoadBalance {
     @Override
     public String get(Map<String, List<String>> server, String serverGroup) {
         int index = serverFlag.get(serverGroup);
-        String target = server.get(serverGroup).get(index);
-        int nextIndex = serverFlag.get(serverGroup) + 1;
-        if (nextIndex >= serverAmount.get(serverGroup)) {
-            nextIndex = 0;
+        String target;
+        synchronized (serverFlag.get(serverGroup)) {
+            target = server.get(serverGroup).get(index);
+            int nextIndex = serverFlag.get(serverGroup) + 1;
+            if (nextIndex >= serverAmount.get(serverGroup)) {
+                nextIndex = 0;
+            }
+            serverFlag.put(serverGroup, nextIndex);
         }
-        serverFlag.put(serverGroup, nextIndex);
 //        System.out.println("balance::" + target + "::" + index + "   next::" + serverFlag.get(serverGroup));
         return target;
     }
