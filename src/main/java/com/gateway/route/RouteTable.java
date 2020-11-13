@@ -13,6 +13,7 @@ public class RouteTable {
         route.readJsonConfig();
     }
 
+    @Deprecated
     static public Map<String, String> getTarget(String url) {
         return route.getTarget(url);
     }

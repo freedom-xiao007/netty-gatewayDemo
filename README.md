@@ -267,3 +267,10 @@ public class Filter {
 - [In Netty 4, what's the difference between ctx.close and ctx.channel.close?](https://stackoverflow.com/questions/21240981/in-netty-4-whats-the-difference-between-ctx-close-and-ctx-channel-close)
 - [How to write a high performance Netty Client](https://stackoverflow.com/questions/8444267/how-to-write-a-high-performance-netty-client)
 
+### 网关
+- [如何设计一个亿级网关(API Gateway)](http://woshinlper.com/system-design/micro-service/API%E7%BD%91%E5%85%B3/)
+- [聊聊 API Gateway 和 Netflix Zuul](http://www.scienjus.com/api-gateway-and-netflix-zuul/)
+- [有赞API网关实践](https://tech.youzan.com/api-gateway-in-practice/)
+- [Leo|20页PPT剖析唯品会API网关设计与实践](https://mp.weixin.qq.com/s/gREMe-G7nqNJJLzbZ3ed3A)
+- [API网关性能比较：NGINX vs. ZUUL vs. Spring Cloud Gateway vs. Linkerd](https://www.infoq.cn/article/comparing-api-gateway-performances)
+

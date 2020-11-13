@@ -1,5 +1,7 @@
 package com.gateway;
 
+import com.gateway.Util.ThreadInfo;
+import com.gateway.client.ClientSyn;
 import com.gateway.filter.Filter;
 import com.gateway.route.RouteTable;
 import com.gateway.server.Server;
@@ -16,6 +18,9 @@ import java.io.IOException;
 public class GateWayApplication {
 
     public static void main(String[] args) throws InterruptedException, IOException {
+        ThreadInfo threadInfo = new ThreadInfo();
+        threadInfo.start();
+
         // 初始化监听端口
         int port = 81;
 
@@ -29,8 +34,10 @@ public class GateWayApplication {
         // 初始化Server
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup serverGroup = new NioEventLoopGroup();
+        EventLoopGroup clientGroup = new NioEventLoopGroup();
 
         try {
+            ClientSyn.getInstance().init(clientGroup);
             Server.run(bossGroup, serverGroup, port);
         } finally {
             bossGroup.shutdownGracefully();

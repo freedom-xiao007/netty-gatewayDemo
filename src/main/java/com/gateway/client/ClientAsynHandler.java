@@ -11,14 +11,14 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * @author lw
  */
-public class ClientHandler extends ChannelInboundHandlerAdapter {
+public class ClientAsynHandler extends ChannelInboundHandlerAdapter {
 
     private Channel serverChannel;
     private volatile HttpResponse httpResponse;
     private Lock lock = new ReentrantLock();
     private Condition condition = lock.newCondition();
 
-    public ClientHandler(Channel serverChannel, HttpRequest request) {
+    public ClientAsynHandler(Channel serverChannel, HttpRequest request) {
         this.serverChannel = serverChannel;
     }
 
