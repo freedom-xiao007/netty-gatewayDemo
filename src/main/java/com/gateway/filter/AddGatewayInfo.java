@@ -9,7 +9,7 @@ public class AddGatewayInfo implements ResponseFilter {
 
     /**
      * 添加Response的Header信息
-     * @param response
+     * @param response 相应
      */
     @Override
     public void filter(HttpResponse response) {

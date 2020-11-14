@@ -7,12 +7,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 
 /**
  * @author lw
  */
+@Deprecated
 public class ClientInitializer extends ChannelInitializer<SocketChannel> {
 
     private Channel serverChannel;
@@ -24,11 +23,11 @@ public class ClientInitializer extends ChannelInitializer<SocketChannel> {
     }
 
     @Override
-    protected void initChannel(SocketChannel ch) throws Exception {
+    protected void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
         pipeline.addLast(new HttpClientCodec());
         pipeline.addLast(new HttpContentDecompressor());
-        pipeline.addLast(new ClientHandler(serverChannel, request));
 //        pipeline.addLast(new LoggingHandler(LogLevel.ERROR));
+        pipeline.addLast(new ClientHandler(serverChannel, request));
     }
 }

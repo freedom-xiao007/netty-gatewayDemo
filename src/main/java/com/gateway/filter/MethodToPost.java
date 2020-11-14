@@ -11,7 +11,7 @@ public class MethodToPost implements RequestFilter {
 
     /**
      * 设置Request的Method为POST
-     * @param request
+     * @param request 请求
      */
     @Override
     public void filter(HttpRequest request) {

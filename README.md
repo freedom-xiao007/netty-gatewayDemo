@@ -33,11 +33,13 @@
 ![](https://github.com/lw1243925457/JAVA-000/blob/main/Week_03/gateway.png)
     
 ## 功能简介
-&ensp;&ensp;&ensp;&ensp;目前系统分为四个模块：server模块、route模块、client模块
+&ensp;&ensp;&ensp;&ensp;目前系统分为四个模块：server模块、route模块、client模块、filter模块
 
 - server模块：接收用户的请求，经过route模块解析后得到目标服务地址，client模块发送请求得到结果后，server返回给用户
 - route模块：读取配置文件，加载路由配置，将不同的请求发送到不同的服务器
-- client模块：同步非阻塞请求客户端，返回请求结果给server模块；目前使用第三方提供的，自己实现的性能不行
+- client模块：发送请求到后台服务器，返回响应给server模块；目前集成了第三方异步非阻塞客户端和自写的同步非阻塞客户端
+    - ClientAsync:第三方异步非阻塞客户端
+    - ClientSyn：自学的同步非阻塞，目前还不完善，某些bug导致响应没法返回，但正常运行的话，性能还行
 - Filter模块：对请求和返回进行处理，内置将请求方法都设置为POST，返回头中添加GATEWAY信息
 
 &ensp;&ensp;&ensp;&ensp;类似于NGINX，将用户请求根据配置转发到相应的后端服务程序中。目前还不支持restful json的请求。
@@ -250,9 +252,16 @@ public class Filter {
 #### 代码说明
 - LoadBalance：负载均衡算法接口
 - Rotation：轮询负载均衡算法
+
+### V1.5
+#### 更新说明
+- 添加自写的同步非阻塞客户端
+
+#### 代码说明
+
  
 ## TODO
-- 由于是使用第三方的异步客户端，过滤模块没有很好的结合起来，需要尝试自己仿写一个
+- 解决自写客户端的某些情况下无法返回请求的bug
 - 补习相关知识，进一步完善网关
  
 ## 参考链接

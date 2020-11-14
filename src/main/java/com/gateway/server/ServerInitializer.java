@@ -4,8 +4,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 
 /**
  * @author lw
@@ -13,11 +11,8 @@ import io.netty.handler.logging.LoggingHandler;
 public class ServerInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
-    protected void initChannel(SocketChannel socketChannel) throws Exception {
+    protected void initChannel(SocketChannel socketChannel) {
         ChannelPipeline pipeline = socketChannel.pipeline();
-
-//        pipeline.addLast("http", new HttpServerCodec());
-//        pipeline.addLast("Aggregator", new HttpObjectAggregator(1048576));
 
         pipeline.addLast("encoder", new HttpResponseEncoder());
         pipeline.addLast("decoder", new HttpRequestDecoder());

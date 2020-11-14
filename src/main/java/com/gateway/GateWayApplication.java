@@ -1,14 +1,13 @@
 package com.gateway;
 
 import com.gateway.Util.ThreadInfo;
+import com.gateway.client.ClientCenter;
 import com.gateway.client.ClientSyn;
 import com.gateway.filter.Filter;
 import com.gateway.route.RouteTable;
 import com.gateway.server.Server;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-
-import java.io.IOException;
 
 /**
  *
@@ -17,7 +16,7 @@ import java.io.IOException;
  */
 public class GateWayApplication {
 
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) throws InterruptedException {
         ThreadInfo threadInfo = new ThreadInfo();
         threadInfo.start();
 
@@ -31,13 +30,18 @@ public class GateWayApplication {
         Filter.initRequestFilter();
         Filter.initResponseFilter();
 
-        // 初始化Server
+        // 初始化Server,Client 这里对线程池进行统一关闭
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup serverGroup = new NioEventLoopGroup();
         EventLoopGroup clientGroup = new NioEventLoopGroup();
 
         try {
-            ClientSyn.getInstance().init(clientGroup);
+            // 使用第三方客户端
+//            ClientCenter.getInstance().init();
+
+            // 使用自写同步非阻塞客户端
+            ClientCenter.getInstance().init(clientGroup);
+
             Server.run(bossGroup, serverGroup, port);
         } finally {
             bossGroup.shutdownGracefully();

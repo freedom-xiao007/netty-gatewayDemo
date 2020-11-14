@@ -3,7 +3,6 @@ package com.gateway.route;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -19,9 +18,9 @@ public class RouteTableSingleton {
          * 懒汉枚举单例
          */
         INSTANCE;
-        private RouteTableSingleton instance = null;
+        private RouteTableSingleton instance;
 
-        private EnumSingleton(){
+        EnumSingleton(){
             instance = new RouteTableSingleton();
         }
         public RouteTableSingleton getSingleton(){
@@ -43,12 +42,12 @@ public class RouteTableSingleton {
 
     /**
      * 从配置文件中读取数据初始化路由表
-     * @param properties
+     * @param properties 配置文件
      */
     @Deprecated
     public void initTable(Properties properties) {
         String hosts = (String) properties.get("route.rule.hots");
-        List<String> sources = Arrays.asList(hosts.split(" "));
+        String[] sources = hosts.split(" ");
 
         String prefix = "route.rule.hosts.";
         String ip = "ip";
@@ -69,12 +68,11 @@ public class RouteTableSingleton {
     /**
      * 根据用户输入的源地址，得到路由表中对应的服务地址
      * @param url 用户输入的源URL
-     * @return
+     * @return 后台服务相关信息
      */
     @Deprecated
     public Map<String, String> getTarget(String url) {
         List<String> path = Arrays.asList(url.split("/"));
-//        System.out.println("path::" + path.toString());
         String source = path.get(1);
         if (!table.containsKey(source)) {
             return null;
@@ -88,10 +86,10 @@ public class RouteTableSingleton {
 
     /**
      * 根据源URL，获取路由中的 目标服务器地址，内置负载均衡
-     * @param url
-     * @return
+     * @param url 源请求地址
+     * @return 后台服务器地址
      */
-    public String getTargetUrl(String url) {
+    String getTargetUrl(String url) {
         for (Map<String, String> table: route) {
             String source = table.get("source");
             int index = url.indexOf(source);
@@ -107,7 +105,7 @@ public class RouteTableSingleton {
     /**
      * 读取JSON配置文件，初始化路由和负载均衡设置
      */
-    public void readJsonConfig() {
+    void readJsonConfig() {
         String fileName = "F:\\Code\\Java\\GateWayDemo\\src\\main\\resources\\route.json";
 //        String fileName = "/root/code/java/GateWayDemo/src/main/resources/route.json";
         Gson gson = new Gson();
@@ -123,8 +121,6 @@ public class RouteTableSingleton {
 
             // 初始化负载均衡
             rotationBalance = new Rotation(server);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

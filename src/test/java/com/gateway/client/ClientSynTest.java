@@ -6,7 +6,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
-import org.checkerframework.checker.units.qual.C;
 import org.junit.Test;
 
 import java.net.URI;
@@ -14,27 +13,38 @@ import java.net.URISyntaxException;
 
 public class ClientSynTest {
 
-    final String URL = System.getProperty("url", "http://127.0.0.1:8081/");
+    private final String URL = System.getProperty("url", "http://127.0.0.1:8081/");
 
     @Test
-    public void test() throws URISyntaxException, InterruptedException {
+    public void testClientASync() throws URISyntaxException {
+        long start = System.currentTimeMillis();
+        ClientCenter.getInstance().init();
+        HttpRequest request = createRequest();
+        for (int i=0; i<10000; i++) {
+            ClientCenter.getInstance().sendAndGet("localhost", "8080", request);
+        }
+        System.out.println((System.currentTimeMillis() - start) + "ms");
+    }
+
+    @Test
+    public void testClientSync() throws URISyntaxException {
         ThreadInfo threadInfo = new ThreadInfo();
         threadInfo.start();
 
         EventLoopGroup group = new NioEventLoopGroup();
-        ClientSyn.getInstance().init(group);
+        ClientCenter.getInstance().init(group);
 
         HttpRequest request = createRequest();
         System.out.println("send 1");
-        HttpResponse response = ClientSyn.getInstance().sendAndGet("localhost", "8081", request);
+        HttpResponse response = ClientCenter.getInstance().sendAndGet("localhost", "8080", request);
         System.out.println(response.toString());
 
         System.out.println("send 2");
-        response = ClientSyn.getInstance().sendAndGet("localhost", "8081", request);
+        response = ClientCenter.getInstance().sendAndGet("localhost", "8080", request);
         System.out.println(response.toString());
 
         System.out.println("send 3");
-        response = ClientSyn.getInstance().sendAndGet("localhost", "8443", request);
+        response = ClientCenter.getInstance().sendAndGet("localhost", "8443", request);
         System.out.println(response.toString());
     }
 

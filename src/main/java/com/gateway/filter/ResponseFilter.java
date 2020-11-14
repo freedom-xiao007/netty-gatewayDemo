@@ -9,7 +9,7 @@ public interface ResponseFilter {
 
     /**
      * 对返回进行处理
-     * @param response
+     * @param response 相应
      */
-    public void filter(HttpResponse response);
+    void filter(HttpResponse response);
 }

@@ -12,9 +12,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
 /**
+ * 这里使用并发的等待-通知机制来拿到结果
  * @author lw
  */
 public class ClientSynHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
@@ -24,10 +24,9 @@ public class ClientSynHandler extends SimpleChannelInboundHandler<FullHttpRespon
     private Condition condition = lock.newCondition();
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) {
         lock.lock();
         try {
-            System.out.println(msg.headers().toString());
             response = new DefaultFullHttpResponse(msg.protocolVersion(), msg.status(),
                     Unpooled.wrappedBuffer(getByteBuf(msg)));
             response.headers()
@@ -40,17 +39,11 @@ public class ClientSynHandler extends SimpleChannelInboundHandler<FullHttpRespon
     }
 
     private byte[] getByteBuf(FullHttpResponse msg) {
-        if (msg instanceof HttpContent) {
-            HttpContent content = (HttpContent) msg;
-            return content.content().toString(CharsetUtil.UTF_8).getBytes();
+        if (msg != null) {
+            return msg.content().toString(CharsetUtil.UTF_8).getBytes();
         }
         return new byte[0];
     }
-
-//    @Override
-//    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-//        condition.signal();
-//    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
@@ -59,7 +52,6 @@ public class ClientSynHandler extends SimpleChannelInboundHandler<FullHttpRespon
     }
 
     public FullHttpResponse getResponse() {
-//        System.out.println("client syn wait return response");
         lock.lock();
         try {
             while (response == null) {
@@ -70,50 +62,7 @@ public class ClientSynHandler extends SimpleChannelInboundHandler<FullHttpRespon
         } finally {
             lock.unlock();
         }
-//        System.out.println("return response");
+//        System.out.println("client get response");
         return response;
     }
-
-    private FullHttpResponse showResponse(Object msg) {
-        FullHttpResponse fullHttpResponse = null;
-        System.out.println("Client::================================");
-        if (msg instanceof HttpResponse) {
-            HttpResponse response = (HttpResponse) msg;
-
-            fullHttpResponse = new DefaultFullHttpResponse(response.protocolVersion(), response.status());
-
-            System.err.println("STATUS: " + response.status());
-            System.err.println("VERSION: " + response.protocolVersion());
-            System.err.println();
-
-            if (!response.headers().isEmpty()) {
-                for (CharSequence name: response.headers().names()) {
-                    for (CharSequence value: response.headers().getAll(name)) {
-                        System.err.println("HEADER: " + name + " = " + value);
-                    }
-                }
-                System.err.println();
-            }
-
-            if (HttpUtil.isTransferEncodingChunked(response)) {
-                System.err.println("CHUNKED CONTENT {");
-            } else {
-                System.err.println("CONTENT {");
-            }
-        }
-        if (msg instanceof HttpContent) {
-            HttpContent content = (HttpContent) msg;
-
-            System.err.print(content.content().toString(CharsetUtil.UTF_8));
-            System.err.flush();
-            fullHttpResponse.replace(content.content());
-
-            if (content instanceof LastHttpContent) {
-                System.err.println("} END OF CONTENT");
-            }
-        }
-        return fullHttpResponse;
-    }
-
-
 }

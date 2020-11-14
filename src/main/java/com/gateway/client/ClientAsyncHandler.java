@@ -9,16 +9,19 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * 暂时不用，全链路异步的客户端目前还实现不了
+ * 全链路异步，需要后台服务返回这边请求时配置的唯一id
  * @author lw
  */
-public class ClientAsynHandler extends ChannelInboundHandlerAdapter {
+@Deprecated
+public class ClientAsyncHandler extends ChannelInboundHandlerAdapter {
 
     private Channel serverChannel;
     private volatile HttpResponse httpResponse;
     private Lock lock = new ReentrantLock();
     private Condition condition = lock.newCondition();
 
-    public ClientAsynHandler(Channel serverChannel, HttpRequest request) {
+    public ClientAsyncHandler(Channel serverChannel, HttpRequest request) {
         this.serverChannel = serverChannel;
     }
 

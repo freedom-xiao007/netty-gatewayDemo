@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * @author lw
  */
+@Deprecated
 public class ClientHandler extends ChannelInboundHandlerAdapter {
 
     private Channel serverChannel;

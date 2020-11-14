@@ -9,7 +9,7 @@ public interface RequestFilter {
 
     /**
      * 对请求进行处理
-     * @param request
+     * @param request 请求
      */
-    public void filter(HttpRequest request);
+    void filter(HttpRequest request);
 }

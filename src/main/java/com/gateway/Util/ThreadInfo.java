@@ -2,6 +2,8 @@ package com.gateway.Util;
 
 
 /**
+ * 打印当前系统的线程信息
+ * 确认客户端是否能重用
  * @author lw
  */
 public class ThreadInfo implements Runnable {

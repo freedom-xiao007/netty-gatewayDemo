@@ -6,15 +6,15 @@ import java.util.List;
 /**
  * @author lw
  */
-public class FilterSingleton {
+class FilterSingleton {
     private enum EnumSingleton {
         /**
          * 懒汉枚举单例
          */
         INSTANCE;
-        private FilterSingleton instance = null;
+        private FilterSingleton instance;
 
-        private EnumSingleton(){
+        EnumSingleton(){
             instance = new FilterSingleton();
         }
         public FilterSingleton getSingleton(){
@@ -22,32 +22,32 @@ public class FilterSingleton {
         }
     }
 
-    public static FilterSingleton getInstance(){
+    static FilterSingleton getInstance(){
         return EnumSingleton.INSTANCE.getSingleton();
     }
 
     /**
      * Request过滤操作链
      */
-    List<RequestFilter> requestFrontFilterList = new ArrayList<>();
+    private List<RequestFilter> requestFrontFilterList = new ArrayList<>();
     /**
      * Response过滤操作链
      */
-    List<ResponseFilter> responseBackendFilters = new ArrayList<>();
+    private List<ResponseFilter> responseBackendFilters = new ArrayList<>();
 
-    public void registerRequestFrontFilter(RequestFilter requestFrontFilter) {
+    void registerRequestFrontFilter(RequestFilter requestFrontFilter) {
         this.requestFrontFilterList.add(requestFrontFilter);
     }
 
-    public void registerResponseBackendFilter(ResponseFilter responseBackendFilter) {
+    void registerResponseBackendFilter(ResponseFilter responseBackendFilter) {
         this.responseBackendFilters.add(responseBackendFilter);
     }
 
-    public List<RequestFilter> getRequestFrontFilterList() {
+    List<RequestFilter> getRequestFrontFilterList() {
         return requestFrontFilterList;
     }
 
-    public List<ResponseFilter> getResponseBackendFilters() {
+    List<ResponseFilter> getResponseBackendFilters() {
         return responseBackendFilters;
     }
 }

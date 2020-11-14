@@ -10,14 +10,14 @@ import java.util.Map;
  */
 public class Rotation implements LoadBalance {
 
-    public Map<String, Integer> serverFlag;
-    public Map<String, Integer> serverAmount;
+    private Map<String, Integer> serverFlag;
+    private Map<String, Integer> serverAmount;
 
     /**
      * 得到相关服务器集群的数量并初始化起始标记位置
-     * @param server
+     * @param server 服务器
      */
-    public Rotation(Map<String, List<String>> server) {
+    Rotation(Map<String, List<String>> server) {
         serverFlag = new HashMap<>(server.size());
         serverAmount = new HashMap<>(server.size());
         for (String serverGroup: server.keySet()) {
@@ -30,7 +30,7 @@ public class Rotation implements LoadBalance {
      * 返回当前标记位的服务器地址，标记位向后移动一位
      * @param server 所有服务器列表
      * @param serverGroup 服务器组名称
-     * @return
+     * @return 转换后的后台服务器请求地址
      */
     @Override
     public String get(Map<String, List<String>> server, String serverGroup) {
@@ -44,7 +44,6 @@ public class Rotation implements LoadBalance {
             }
             serverFlag.put(serverGroup, nextIndex);
         }
-//        System.out.println("balance::" + target + "::" + index + "   next::" + serverFlag.get(serverGroup));
         return target;
     }
 }

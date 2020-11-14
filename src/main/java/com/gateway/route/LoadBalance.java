@@ -15,5 +15,5 @@ public interface LoadBalance {
      * @param serverGroup 服务器组名称
      * @return 机器地址
      */
-    public String get(Map<String, List<String>> server, String serverGroup);
+    String get(Map<String, List<String>> server, String serverGroup);
 }
