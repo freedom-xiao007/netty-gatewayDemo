@@ -26,6 +26,17 @@
     
     
     
+## 工程说明
+&ensp;&ensp;&ensp;&ensp;目前基本功能都已经实现，但在请求的细节上还有需要做的，目前只支持简单的字符串返回的后台服务器
+
+- 网关服务端：接收用户请求
+- 网关客户端：返回后台服务，得到响应数据
+- 路由模块：解析服务端的请求地址，得到后台服务器对应地址，并对同一个服务器集群进行负载均衡
+- 过滤模块：对请求和响应进行过滤处理
+    
+## 工程运行说明
+- 网关程序入口：\src\main\java\com\gateway\GateWayApplication.java
+- 后台服务程序入口：src\main\java\com\netty\example\helloworld\HttpHelloWorldServer
     
 ## 相关模块
 &ensp;&ensp;&ensp;&ensp;当前的网关大体模块如下图：
@@ -38,8 +49,8 @@
 - server模块：接收用户的请求，经过route模块解析后得到目标服务地址，client模块发送请求得到结果后，server返回给用户
 - route模块：读取配置文件，加载路由配置，将不同的请求发送到不同的服务器
 - client模块：发送请求到后台服务器，返回响应给server模块；目前集成了第三方异步非阻塞客户端和自写的同步非阻塞客户端
-    - ClientAsync:第三方异步非阻塞客户端
-    - ClientSyn：自学的同步非阻塞，目前还不完善，某些bug导致响应没法返回，但正常运行的话，性能还行
+    - ThirdClientAsync:第三方异步非阻塞客户端
+    - CustomClientAsync：自学的同步非阻塞，目前还不完善，某些bug导致响应没法返回，但正常运行的话，性能还行
 - Filter模块：对请求和返回进行处理，内置将请求方法都设置为POST，返回头中添加GATEWAY信息
 
 &ensp;&ensp;&ensp;&ensp;类似于NGINX，将用户请求根据配置转发到相应的后端服务程序中。目前还不支持restful json的请求。
@@ -77,33 +88,54 @@
     - 转发后端URL为："http://192.168.101.105:8080/getSome"
     
 ## 相关测试
+### 测试运行说明
+#### 后台服务器
+- 后台服务器：本工程中的\src\main\java\com\netty\example\helloworld\HttpHelloWorldServer
+    - 直接启动两个，分别监听在8080和8081端口
+    
+#### 网关
+- 网关：两个测试，一个是集成了第三方异步非阻塞客户端，一个是集成了自己写的异步非阻塞客户端，在入口：GateWayApplication 中进行配置
+
+```java
+// 使用自定义第三方客户端
+ClientCenter.getInstance().init(CUSTOM_CLIENT_ASYNC, clientGroup);
+
+// 使用第三方客户端
+ClientCenter.getInstance().init(THIRD_CLIENT_ASYNC, clientGroup);
+```
+
+### 测试结果
 &ensp;&ensp;&ensp;&ensp;这里压测一下网关，基本命令如下，在2分钟左右基本能得到稳定值，不再大幅度抖动
 
 ```shell script
-sb -u http://localhost:80/greeting -c 20 -N 120
+// 直接压测后台服务器
+sb -u http://192.168.101.104:8080 -c 15 -N 120
+
+// 通过网关压测一台后台服务器
+sb -u http://192.168.101.104:81/group1/ -c 15 -N 120
+
+// 通过网关压测两台后台服务器
+sb -u http://192.168.101.104:81/group2/ -c 15 -N 120
 ```
 
 &ensp;&ensp;&ensp;&ensp;得到的相关结果如下：
 
 |测试条件说明                       |测试结果                          |
 |----------                       |---------------------------------|
-|不用网关直接访问单服务               | RPS: 5887.5 (requests/second)   |
-|经过网关访问单服务                   | RPS: 5191.9 (requests/second)  |
-|经过网关访问两个服务器（负载均衡）     | RPS: 5664.5 (requests/second)   |
+|不用网关直接访问单服务               | RPS: 3860 (requests/second)   |
+|经过网关访问单服务(自定义客户端）                   | RPS: 3255.2 (requests/second)  |
+|经过网关访问两个服务器(自定义客户端）（负载均衡）     | RPS: 3347.4 (requests/second)   |
+|经过网关访问单服务(第三方客户端）                   | RPS: 3288.5 (requests/second)  |
+|经过网关访问两个服务器(第三方客户端）（负载均衡）     | RPS: 3297.4 (requests/second)   |
 
 &ensp;&ensp;&ensp;&ensp;经过上面的测试数据可以发现，经过网关性能是要差一些的。感觉这样应该是正常的，毕竟网络链路都要多走一步。
 
 &ensp;&ensp;&ensp;&ensp;如果后端服务的host和port相同的话，那就相当于代理了，经过测试，如果简单代理的话，性能几乎是相同的。
 
-&ensp;&ensp;&ensp;&ensp;目前网关假设是后端服务会有不同的ip地址和端口，所以Server端测试的时候线程新建和销毁比代理要多，而且客户端必须是异步的，有状态的客户端会导致更多的线程新建和销毁。
-
 &ensp;&ensp;&ensp;&ensp
 ;经过网关访问两个服务器（负载均衡）的测试结果不是预料中的，想象中应该是两倍的性能，但这里要考虑到网关的性能是否能够支撑了。由于机器的性能基本上已经打满了，这里就没法去测试这个准确的。但可以看到相对于单服务器，两个服务器的性能是有所提升的。
 
-&ensp;&ensp;&ensp;&ensp;目前来看功能上是达到作业要求了，但性能上可能有些不足。做下来感觉网关这个东西还有很多很多的点，这里只是一小部分，不简单。
-
-
-
+&ensp;&ensp;&ensp;&ensp;负载均衡的效果不是理想中的，后面有条件再尝试尝试。但其他的应该是够了
 
 ## 改动记录
 ### V1.0
@@ -258,11 +290,142 @@ public class Filter {
 - 添加自写的同步非阻塞客户端
 
 #### 代码说明
+&ensp;&ensp;&ensp;&ensp;这个版本更新主要是解决下面两个问题：
+
+- 自写的异步非阻塞客户端：前面用的是第三方写的，不用自己写的就有点怪异
+- 网关客户端和服务端的解耦：server outbound 和 client inbound 不应该同时处于客户端和服务端的handler中，这样不利于后面的扩展
+
+##### 自写异步客户端关键代码说明
+&ensp;&ensp;&ensp;&ensp;客户端的关键有两点：
+
+- 1.能从客户端的返回结果：netty都是异步的，这里采用锁的等待-通知机制，将结果返回。
+- 2.网关客户端和服务端的解耦：这里使用客户端中心，通过传入的server outbound将客户端返回的响应直接返回
+
+&ensp;&ensp;&ensp;&ensp;后台服务器响应的获取，直接从最后的handler中做文章，从里面获取结果，相关代码如下：
+
+```java
+/**
+ * 这里使用并发的等待-通知机制来拿到结果
+ * @author lw
+ */
+public class CustomClientAsyncHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
+
+    private CountDownLatch latch;
+    private FullHttpResponse response;
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) {
+        // 拿到结果后再释放锁
+        response = CreatResponse.createResponse(msg);
+        latch.countDown();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        cause.printStackTrace();
+        ctx.close();
+    }
+
+    /**
+     * 锁的初始化
+     * @param latch CountDownLatch
+     */
+    void setLatch(CountDownLatch latch) {
+        this.latch = latch;
+    }
+
+    /**
+     * 阻塞等待结果后返回
+     * @return 后台服务器响应
+     * @throws InterruptedException
+     */
+    public FullHttpResponse getResponse() throws InterruptedException {
+        latch.await();
+        return response;
+    }
+}
+```
+
+&ensp;&ensp;&ensp;&ensp;因为pipeline是可以动态变化的，我们在初始化的时候，只添加前面的编解码即可，当需要发起请求给后台服务器的时候才装载
+
+```java
+// 每次发起请求都new一个新的handler，并重置CountDownLatch
+CustomClientAsyncHandler handler = new CustomClientAsyncHandler();
+handler.setLatch(new CountDownLatch(1));
+// 获取client outbound
+Channel channel = createChannel(address, port);
+// 在pipeline最后添加上面的handler
+channel.pipeline().addLast("clientHandler", handler);
+```
+
+&ensp;&ensp;&ensp;&ensp;其中一个关键是channel的复用，当用户请求和后台服务器相同时，我们能复用之前的channel，那是非常关键的
+
+&ensp;&ensp;&ensp;&ensp;channel的复用这里暂时采取用ConcurrentHashMap<Channel, Channel>，来存取服务端和对应的客户端
+
+&ensp;&ensp;&ensp;&ensp;复用的时候，需要移除之前的handler，重新再添加一个handler(应该是重置后可以复用，但有点小问题没解决)
+
+```java
+// 移除之前的handler
+channel.pipeline().removeLast();
+// 新建handler并设置锁
+CustomClientAsyncHandler handler = new CustomClientAsyncHandler();
+handler.setLatch(new CountDownLatch(1));
+// 添加handler
+channel.pipeline().addLast("clientHandler", handler);
+```
+
+&ensp;&ensp;&ensp;&ensp;解耦相对就比较简单了，新建一个ClientCenter来承接就行了，这里就不多介绍了，相关代码中execute函数中
+
+```java
+/**
+ * 使用时请进行初始化操作
+ * 客户端中心
+ * 起一个中介中用，获取后台服务器结果，调用server outbound返回结果
+ * @author lw
+ */
+public class ClientCenter {
+
+    public void execute(FullHttpRequest request, Channel serverOutbound) {
+        // 路由转发处理,负载均衡
+        String source = request.uri();
+        String target = RouteTable.getTargetUrl(source);
+
+        URI uri = null;
+        try {
+            uri = new URI(target);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        String address = uri.getHost();
+        int port = uri.getPort();
+        request.setUri(uri.getPath());
+
+        // 请求过滤处理
+        Filter.requestProcess(request);
+
+        FullHttpResponse response = client.execute(request, address, port, serverOutbound);
+        if (response == null) {
+            System.out.println("backend server return null");
+        }
+
+        // 相应过滤处理
+        Filter.responseProcess(response);
+
+        // 返回Response数据给用户
+        try {
+            serverOutbound.writeAndFlush(response).sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
 
  
-## TODO
-- 解决自写客户端的某些情况下无法返回请求的bug
-- 补习相关知识，进一步完善网关
+## TODO LIST
+
  
 ## 参考链接
 - [Java Properties file examples](https://mkyong.com/java/java-properties-file-examples/)
@@ -282,4 +445,11 @@ public class Filter {
 - [有赞API网关实践](https://tech.youzan.com/api-gateway-in-practice/)
 - [Leo|20页PPT剖析唯品会API网关设计与实践](https://mp.weixin.qq.com/s/gREMe-G7nqNJJLzbZ3ed3A)
 - [API网关性能比较：NGINX vs. ZUUL vs. Spring Cloud Gateway vs. Linkerd](https://www.infoq.cn/article/comparing-api-gateway-performances)
+
+### Netty
+- [Netty 源码解析（三）: Netty 的 Future 和 Promise](https://juejin.im/post/6844904144793419784)
+
+### 多线程
+- [线程池最佳实践！安排！](https://juejin.im/post/6844904186400899086)
+- [JAVA 拾遗 --Future 模式与 Promise 模式](https://www.cnkirito.moe/future-and-promise/)
 

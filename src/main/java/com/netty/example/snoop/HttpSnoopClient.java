@@ -15,7 +15,7 @@
  */
 package com.netty.example.snoop;
 
-import com.gateway.Util.ThreadInfo;
+import com.gateway.common.ThreadInfo;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -37,7 +37,8 @@ import java.net.URI;
  */
 public final class HttpSnoopClient {
 
-    static final String URL = System.getProperty("url", "http://127.0.0.1:8080/");
+    static final String URL = System.getProperty("url", "http://127.0.0.1:81/group1");
+//    static final String URL = System.getProperty("url", "http://127.0.0.1:8080");
 
     public static void main(String[] args) throws Exception {
         ThreadInfo threadInfo = new ThreadInfo();
@@ -96,8 +97,6 @@ public final class HttpSnoopClient {
                             new DefaultCookie("another-cookie", "bar")));
 
             // Send the HTTP request.
-            ch.writeAndFlush(request);
-            Thread.sleep(3000);
             ch.writeAndFlush(request);
 
             // Wait for the server to close the connection.

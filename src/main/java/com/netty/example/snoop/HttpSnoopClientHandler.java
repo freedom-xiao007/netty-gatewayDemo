@@ -24,6 +24,7 @@ public class HttpSnoopClientHandler extends SimpleChannelInboundHandler<HttpObje
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
+        System.out.println("client receive msg");
         if (msg instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) msg;
 

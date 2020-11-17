@@ -1,6 +1,6 @@
 package com.gateway.client;
 
-import com.gateway.Util.ThreadInfo;
+import com.gateway.common.ThreadInfo;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;

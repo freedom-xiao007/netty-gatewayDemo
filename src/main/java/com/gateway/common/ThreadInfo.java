@@ -1,4 +1,4 @@
-package com.gateway.Util;
+package com.gateway.common;
 
 
 /**

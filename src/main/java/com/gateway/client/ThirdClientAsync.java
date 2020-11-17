@@ -1,6 +1,7 @@
 package com.gateway.client;
 
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.*;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
@@ -21,11 +22,11 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
  * 第三方的异步高性能客户端
  * https://github.com/AsyncHttpClient/async-http-client
  */
-public class ClientAsync implements Client {
+public class ThirdClientAsync implements Client {
 
     private AsyncHttpClient asyncHttpClient = asyncHttpClient();
 
-    public FullHttpResponse getResponse(String url) throws ExecutionException, InterruptedException {
+    private FullHttpResponse getResponse(String url) throws ExecutionException, InterruptedException {
         ListenableFuture<Response> responseFuture = asyncHttpClient.prepareGet(url).execute();
         Response originResponse = responseFuture.get();
 
@@ -45,13 +46,17 @@ public class ClientAsync implements Client {
         return response;
     }
 
+
     @Override
-    public FullHttpResponse sendAndGet(String address, String port, HttpRequest request) {
+    public FullHttpResponse execute(FullHttpRequest request, String address, int port, Channel serverOutbound) {
         try {
             return getResponse("http://" + address + ":" + port + request.uri());
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println("Error, get response");
         }
         return null;
     }
+
+
 }
