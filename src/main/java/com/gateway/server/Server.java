@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 
 /**
+ * 服务端配置启动
  * @author lw
  */
 public class Server {

@@ -32,6 +32,15 @@ public class CustomClientAsync implements Client {
     }
 
 
+    /**
+     * 调用channel发送请求，从handler中获取响应结果
+     * @param address 服务器ip
+     * @param port 服务器端口
+     * @param request 请求
+     * @param serverChannel server outbound
+     * @return 响应
+     * @throws InterruptedException exception
+     */
     private FullHttpResponse getResponse(String address, int port, FullHttpRequest request,
                              Channel serverChannel) throws InterruptedException {
         // 查看缓存池中是否有可重用的channel

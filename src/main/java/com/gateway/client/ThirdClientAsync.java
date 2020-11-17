@@ -26,6 +26,13 @@ public class ThirdClientAsync implements Client {
 
     private AsyncHttpClient asyncHttpClient = asyncHttpClient();
 
+    /**
+     * 调用第三方客户端，获取并返回响应结果
+     * @param url 请求地址
+     * @return 响应结果
+     * @throws ExecutionException exception
+     * @throws InterruptedException exception
+     */
     private FullHttpResponse getResponse(String url) throws ExecutionException, InterruptedException {
         ListenableFuture<Response> responseFuture = asyncHttpClient.prepareGet(url).execute();
         Response originResponse = responseFuture.get();

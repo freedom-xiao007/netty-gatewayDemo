@@ -428,7 +428,6 @@ public class ClientCenter {
 - 1. 10-讲网关的frontend/backend/filter/router/线程池都改造成Spring配置方式；
 - 2. 20-基于AOP改造Netty网关，filter和router使用AOP方式实现；
 - 3. 30-基于前述改造，将网关请求前后端分离，中级使用JMS传递消息；
-- 4. 输出改log规范化
 
  
 ## 参考链接

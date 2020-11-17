@@ -55,6 +55,11 @@ public class ClientCenter {
         logger.info("Select client type: " + clientType);
     }
 
+    /**
+     * 将请求转发到后台服务器，获得响应后返回给用户
+     * @param request 请求
+     * @param serverOutbound server outbound
+     */
     public void execute(FullHttpRequest request, Channel serverOutbound) {
         // 路由转发处理,负载均衡
         String source = request.uri();
