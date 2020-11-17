@@ -1,11 +1,14 @@
 package com.gateway.client;
 
+import com.gateway.common.CreatResponse;
 import com.gateway.filter.Filter;
 import com.gateway.route.RouteTable;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,6 +42,8 @@ public class ClientCenter {
         return EnumSingleton.INSTANCE.getSingleton();
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(ClientCenter.class);
+
     private Client client;
 
     public void init(String clientType, EventLoopGroup clientGroup) {
@@ -47,13 +52,23 @@ public class ClientCenter {
         } else {
             client = new CustomClientAsync(clientGroup);
         }
-        System.out.println("Select client type: " + clientType);
+        logger.info("Select client type: " + clientType);
     }
 
     public void execute(FullHttpRequest request, Channel serverOutbound) {
         // 路由转发处理,负载均衡
         String source = request.uri();
         String target = RouteTable.getTargetUrl(source);
+        if (target == null) {
+            logger.error("url: " + source + " can't find in route");
+            try {
+                serverOutbound.writeAndFlush(CreatResponse.creat404(request)).sync();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                logger.error("return 404 failed");
+            }
+            return;
+        }
 
         URI uri = null;
         try {
@@ -72,7 +87,7 @@ public class ClientCenter {
 
         FullHttpResponse response = client.execute(request, address, port, serverOutbound);
         if (response == null) {
-            System.out.println("backend server return null");
+            logger.error("backend server return null");
         }
 
         // 相应过滤处理

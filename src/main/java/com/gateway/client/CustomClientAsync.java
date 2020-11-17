@@ -7,6 +7,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -16,6 +18,8 @@ import java.util.concurrent.CountDownLatch;
  * @author lw
  */
 public class CustomClientAsync implements Client {
+
+    private static final Logger logger = LoggerFactory.getLogger(CustomClientAsync.class);
 
     /**
      * 使用Map来保存用过的Channel，看下次相同的后台服务是否能够重用，起一个类似缓存的作用
@@ -34,7 +38,7 @@ public class CustomClientAsync implements Client {
         if (channelPool.containsKey(serverChannel)) {
             Channel channel = channelPool.get(serverChannel);
             if (!channel.isActive() || !channel.isWritable() || !channel.isOpen()) {
-                System.out.println("Channel can't reuse");
+                logger.debug("Channel can't reuse");
             } else {
                 try {
                     channel.pipeline().removeLast();
@@ -44,11 +48,11 @@ public class CustomClientAsync implements Client {
                     channel.writeAndFlush(request.retain()).sync();
                     return handler.getResponse();
                 } catch (Exception e) {
-                    System.out.println("channel reuse send msg failed!");
+                    logger.debug("channel reuse send msg failed!");
                     channel.close();
                     channelPool.remove(serverChannel);
                 }
-                System.out.println("Handler is busy, please user new channel");
+                logger.debug("Handler is busy, please user new channel");
             }
         }
 

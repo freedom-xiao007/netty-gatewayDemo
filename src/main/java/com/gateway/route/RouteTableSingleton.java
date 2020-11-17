@@ -2,6 +2,8 @@ package com.gateway.route;
 
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -32,6 +34,8 @@ public class RouteTableSingleton {
         return EnumSingleton.INSTANCE.getSingleton();
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(RouteTableSingleton.class);
+
     private Map<String, Map<String, String>> table = new HashMap<>(16);
     private Map<String, List<String>> server;
     private List<Map<String, String>> route;
@@ -59,9 +63,9 @@ public class RouteTableSingleton {
             table.put(source, target);
         }
 
-        System.out.println("Load route table end::");
+        logger.info("Load route table end::");
         for (String source: table.keySet()) {
-            System.out.println(source + " --> " + table.get(source));
+            logger.info(source + " --> " + table.get(source));
         }
     }
 
@@ -111,13 +115,13 @@ public class RouteTableSingleton {
         Gson gson = new Gson();
         try (Reader reader = new FileReader(fileName)) {
             Map<String, Object> config = gson.fromJson(reader, Map.class);
-            System.out.println(config.toString());
+            logger.info(config.toString());
 
             server = (Map<String, List<String>>) config.get("server");
-            System.out.println(server);
+            logger.info(server.toString());
 
             route = (List<Map<String, String>>) config.get("route");
-            System.out.println(route);
+            logger.info(route.toString());
 
             // 初始化负载均衡
             rotationBalance = new Rotation(server);

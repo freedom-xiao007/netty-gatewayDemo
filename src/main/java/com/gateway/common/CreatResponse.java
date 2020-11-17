@@ -2,6 +2,7 @@ package com.gateway.common;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.util.CharsetUtil;
@@ -10,6 +11,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderValues.*;
 import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
 /**
@@ -41,5 +43,15 @@ public class CreatResponse {
             return msg.content().toString(CharsetUtil.UTF_8).getBytes();
         }
         return new byte[0];
+    }
+
+    public static FullHttpResponse creat404(FullHttpRequest request) {
+        FullHttpResponse response = new DefaultFullHttpResponse(request.protocolVersion(), NOT_FOUND,
+                Unpooled.EMPTY_BUFFER);
+        response.headers()
+                .set(CONTENT_TYPE, TEXT_PLAIN)
+                .setInt(CONTENT_LENGTH, response.content().readableBytes());
+        response.headers().set(CONNECTION, CLOSE);
+        return response;
     }
 }

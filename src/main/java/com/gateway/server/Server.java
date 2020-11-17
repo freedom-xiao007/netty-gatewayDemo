@@ -5,12 +5,16 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
  * @author lw
  */
 public class Server {
+
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     static public void run(EventLoopGroup bossGroup, EventLoopGroup serverGroup, int port) throws InterruptedException {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
@@ -24,7 +28,7 @@ public class Server {
                 .childHandler(new ServerInitializer());
 
         Channel channel = serverBootstrap.bind(port).sync().channel();
-        System.out.println("Gateway lister on port: " + port);
+        logger.info("Gateway lister on port: " + port);
         channel.closeFuture().sync();
     }
 }
