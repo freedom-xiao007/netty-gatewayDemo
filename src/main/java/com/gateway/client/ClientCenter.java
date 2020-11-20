@@ -46,7 +46,10 @@ public class ClientCenter {
 
     private Client client;
 
+    private String name;
+
     public void init(String clientType, EventLoopGroup clientGroup) {
+        System.out.println("test name::" + name);
         if (THIRD_CLIENT_ASYNC.equals(clientType)) {
             client = new ThirdClientAsync();
         } else {
@@ -88,7 +91,7 @@ public class ClientCenter {
         request.setUri(uri.getPath());
 
         // 请求过滤处理
-        Filter.requestProcess(request);
+//        Filter.requestProcess(request);
 
         FullHttpResponse response = client.execute(request, address, port, serverOutbound);
         if (response == null) {

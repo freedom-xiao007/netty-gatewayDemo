@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.gateway</groupId>
+    <artifactId>GateWayDemo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>GateWayDemo</name>
+    <description>Demo project for netty gateway</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.source-target.version>1.8</java.source-target.version>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>1.8.9</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId> <!-- Use 'netty-all' for 4.0 or above -->
+            <version>4.1.45.Final</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>30.0-jre</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.asynchttpclient</groupId>
+            <artifactId>async-http-client-bom</artifactId>
+            <version>2.12.1</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.asynchttpclient</groupId>
+            <artifactId>async-http-client</artifactId>
+            <version>2.12.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.8.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>aspectj-maven-plugin</artifactId>
+                    <version>1.7</version>
+                    <configuration>
+                        <showWeaveInfo>true</showWeaveInfo>
+                        <source>${java.source-target.version}</source>
+                        <target>${java.source-target.version}</target>
+                        <Xlint>ignore</Xlint>
+                        <complianceLevel>${java.source-target.version}</complianceLevel>
+                        <encoding>UTF-8</encoding>
+                        <verbose>true</verbose>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <!-- IMPORTANT -->
+                            <phase>process-sources</phase>
+                            <goals>
+                                <goal>compile</goal>
+                                <goal>test-compile</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.aspectj</groupId>
+                            <artifactId>aspectjtools</artifactId>
+                            <version>1.8.9</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>aspectj-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

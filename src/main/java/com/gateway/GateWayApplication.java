@@ -8,7 +8,6 @@ import com.gateway.server.Server;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-
 import java.util.concurrent.ThreadFactory;
 
 import static com.gateway.common.Constant.CUSTOM_CLIENT_ASYNC;
@@ -46,10 +45,10 @@ public class GateWayApplication {
 
         try {
             // 使用自定义第三方客户端
-//            ClientCenter.getInstance().init(CUSTOM_CLIENT_ASYNC, clientGroup);
+            ClientCenter.getInstance().init(CUSTOM_CLIENT_ASYNC, clientGroup);
 
             // 使用第三方客户端
-            ClientCenter.getInstance().init(THIRD_CLIENT_ASYNC, clientGroup);
+//            ClientCenter.getInstance().init(THIRD_CLIENT_ASYNC, clientGroup);
 
             Server.run(bossGroup, serverGroup, port);
         } finally {
