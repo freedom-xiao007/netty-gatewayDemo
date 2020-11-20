@@ -1,18 +1,16 @@
 package com.demo.gateway.client;
 
-import com.demo.gateway.common.Constant;
 import com.demo.gateway.common.CreatResponse;
 import com.demo.gateway.filter.Filter;
 import com.demo.gateway.route.RouteTable;
 import io.netty.channel.Channel;
-import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * 使用时请进行初始化操作
@@ -20,49 +18,19 @@ import java.net.URISyntaxException;
  * 起一个中介中用，获取后台服务器结果，调用server outbound返回结果
  * @author lw
  */
+@Component
 public class ClientCenter {
-
-    private enum EnumSingleton {
-        /**
-         * 懒汉枚举单例
-         */
-        INSTANCE;
-        private ClientCenter instance;
-
-        EnumSingleton(){
-            instance = new ClientCenter();
-        }
-        public ClientCenter getSingleton(){
-            return instance;
-        }
-    }
-
-    public static ClientCenter getInstance(){
-        return EnumSingleton.INSTANCE.getSingleton();
-    }
 
     private static final Logger logger = LoggerFactory.getLogger(ClientCenter.class);
 
-    private Client client;
-
-    private String name;
-
-    public void init(String clientType, EventLoopGroup clientGroup) {
-        System.out.println("test name::" + name);
-        if (Constant.THIRD_CLIENT_ASYNC.equals(clientType)) {
-            client = new ThirdClientAsync();
-        } else {
-            client = new CustomClientAsync(clientGroup);
-        }
-        logger.info("Select client type: " + clientType);
-    }
+    private static final CustomClientAsync client = new CustomClientAsync();
 
     /**
      * 将请求转发到后台服务器，获得响应后返回给用户
      * @param request 请求
      * @param serverOutbound server outbound
      */
-    public void execute(FullHttpRequest request, Channel serverOutbound) {
+    static public void execute(FullHttpRequest request, Channel serverOutbound) {
         // 路由转发处理,负载均衡
         String source = request.uri();
         String target = RouteTable.getTargetUrl(source);
@@ -77,22 +45,12 @@ public class ClientCenter {
             return;
         }
 
-        URI uri = null;
-        try {
-            uri = new URI(target);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        String address = uri.getHost();
-        int port = uri.getPort();
-        request.setUri(uri.getPath());
+        request.setUri(target);
 
         // 请求过滤处理
-//        Filter.requestProcess(request);
+        Filter.requestProcess(request);
 
-        FullHttpResponse response = client.execute(request, address, port, serverOutbound);
+        FullHttpResponse response = client.execute(request, serverOutbound);
         if (response == null) {
             logger.error("backend server return null");
         }

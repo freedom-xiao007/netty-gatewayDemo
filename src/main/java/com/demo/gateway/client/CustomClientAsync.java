@@ -1,15 +1,25 @@
 package com.demo.gateway.client;
 
+import com.demo.gateway.annotation.RequestFilterAnnotation;
+import com.demo.gateway.annotation.ResponseFilterAnnotation;
+import com.demo.gateway.annotation.RouteAnnotation;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.stereotype.Component;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
@@ -17,7 +27,9 @@ import java.util.concurrent.CountDownLatch;
  * 自己实现的同步阻塞客户端，性能勉强达到要求
  * @author lw
  */
-public class CustomClientAsync implements Client {
+@Component
+@EnableAspectJAutoProxy(exposeProxy = true)
+public class CustomClientAsync implements Client, DisposableBean {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomClientAsync.class);
 
@@ -25,24 +37,20 @@ public class CustomClientAsync implements Client {
      * 使用Map来保存用过的Channel，看下次相同的后台服务是否能够重用，起一个类似缓存的作用
      */
     private ConcurrentHashMap<Channel, Channel> channelPool = new ConcurrentHashMap<>();
-    private EventLoopGroup clientGroup;
+    private EventLoopGroup clientGroup = new NioEventLoopGroup(new ThreadFactoryBuilder().setNameFormat("client work-%d").build());
 
-    CustomClientAsync(EventLoopGroup clientGroup) {
-        this.clientGroup = clientGroup;
+    CustomClientAsync() {
     }
 
 
     /**
      * 调用channel发送请求，从handler中获取响应结果
-     * @param address 服务器ip
-     * @param port 服务器端口
      * @param request 请求
      * @param serverChannel server outbound
      * @return 响应
      * @throws InterruptedException exception
      */
-    private FullHttpResponse getResponse(String address, int port, FullHttpRequest request,
-                                         Channel serverChannel) throws InterruptedException {
+    private FullHttpResponse getResponse(FullHttpRequest request, Channel serverChannel) throws InterruptedException, URISyntaxException {
         // 查看缓存池中是否有可重用的channel
         if (channelPool.containsKey(serverChannel)) {
             Channel channel = channelPool.get(serverChannel);
@@ -65,11 +73,16 @@ public class CustomClientAsync implements Client {
             }
         }
 
+
         // 没有或者不可用则新建
         // 并将最终的handler添加到pipeline中，拿到结果后返回
         CustomClientAsyncHandler handler = new CustomClientAsyncHandler();
         handler.setLatch(new CountDownLatch(1));
-        Channel channel = createChannel(address, port);
+        URI uri = new URI(request.uri());
+        System.out.println(request.uri());
+        System.out.println(uri.getHost());
+        System.out.println(uri.getPort());
+        Channel channel = createChannel(uri.getHost(), uri.getPort());
         channel.pipeline().addLast("clientHandler", handler);
         channelPool.put(serverChannel, channel);
 
@@ -97,13 +110,20 @@ public class CustomClientAsync implements Client {
     }
 
     @Override
-    public FullHttpResponse execute(FullHttpRequest request, String address, int port, Channel serverOutbound) {
+    @RouteAnnotation
+    @RequestFilterAnnotation
+    @ResponseFilterAnnotation
+    public FullHttpResponse execute(FullHttpRequest request, Channel serverOutbound) {
         try {
-            return getResponse(address, port, request, serverOutbound);
-        } catch (InterruptedException e) {
+            return getResponse(request, serverOutbound);
+        } catch (InterruptedException | URISyntaxException e) {
             e.printStackTrace();
         }
         return null;
     }
 
+    @Override
+    public void destroy() {
+        clientGroup.shutdownGracefully();
+    }
 }

@@ -1,13 +1,25 @@
 package com.demo.gateway.filter;
 
+import com.demo.gateway.client.CustomClientAsync;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
 /**
  * 过滤器
  * @author lw
  */
-public class Filter {
+@Component
+@Order(1)
+public class Filter implements ApplicationRunner {
+
+    private static final Logger logger = LoggerFactory.getLogger(CustomClientAsync.class);
+
     static final FilterSingleton filterSingleton = FilterSingleton.getInstance();
 
     static private void addRequestFilter(RequestFilter requestFrontFilter) {
@@ -50,5 +62,12 @@ public class Filter {
         for (ResponseFilter filter: filterSingleton.getResponseBackendFilters()) {
             filter.filter(response);
         }
+    }
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        Filter.initRequestFilter();
+        Filter.initResponseFilter();
+        logger.info("Filter line load successfully");
     }
 }

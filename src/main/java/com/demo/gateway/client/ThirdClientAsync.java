@@ -22,6 +22,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
  * 第三方的异步高性能客户端
  * https://github.com/AsyncHttpClient/async-http-client
  */
+@Deprecated
 public class ThirdClientAsync implements Client {
 
     private AsyncHttpClient asyncHttpClient = asyncHttpClient();
@@ -55,15 +56,14 @@ public class ThirdClientAsync implements Client {
 
 
     @Override
-    public FullHttpResponse execute(FullHttpRequest request, String address, int port, Channel serverOutbound) {
+    public FullHttpResponse execute(FullHttpRequest request, Channel serverOutbound) {
         try {
-            return getResponse("http://" + address + ":" + port + request.uri());
+            return getResponse(request.uri());
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Error, get response");
         }
         return null;
     }
-
 
 }
