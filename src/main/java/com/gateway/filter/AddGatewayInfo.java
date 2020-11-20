@@ -13,6 +13,6 @@ public class AddGatewayInfo implements ResponseFilter {
      */
     @Override
     public void filter(HttpResponse response) {
-        response.headers().add("GateWay", "Gateway");
+        response.headers().add("GateWay", "GateWay");
     }
 }

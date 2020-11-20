@@ -8,18 +8,28 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 
-public class ClientTest {
 
+/**
+ * @author lw
+ * 第三方的异步高性能客户端
+ * https://github.com/AsyncHttpClient/async-http-client
+ */
+public class ThirdClientAsyncTest {
+
+    /**
+     * 检测客户端是否能获取响应
+     */
     @Test
-    public void asyncClientTest() throws ExecutionException, InterruptedException {
+    public void test() throws ExecutionException, InterruptedException {
         AsyncHttpClient asyncHttpClient = asyncHttpClient();
-        Future<Response> responseFuture = asyncHttpClient.prepareGet("http://192.168.101.105:8080/").execute();
+        Future<Response> responseFuture = asyncHttpClient.prepareGet("http://www.baidu.com/").execute();
         Response response = responseFuture.get();
         System.out.println(response.toString());
         System.out.println(response.getStatusCode());
         System.out.println(response.getHeaders().toString());
         System.out.println(Arrays.toString(response.getResponseBody().getBytes()));
+        assert response.getStatusCode() == 200;
     }
 }
