@@ -110,8 +110,7 @@ public class RouteTableSingleton {
      * 读取JSON配置文件，初始化路由和负载均衡设置
      */
     void readJsonConfig() {
-        String fileName = "F:\\Code\\Java\\GateWayDemo-re\\src\\main\\resources\\route.json";
-//        String fileName = "/root/code/java/GateWayDemo/src/main/resources/route.json";
+        String fileName = "F:\\Code\\Java\\netty-gatewayDemo\\src\\main\\resources\\route.json";
         Gson gson = new Gson();
         try (Reader reader = new FileReader(fileName)) {
             Map<String, Object> config = gson.fromJson(reader, Map.class);
