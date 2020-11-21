@@ -27,12 +27,12 @@
     
     
 ## 工程说明
-&ensp;&ensp;&ensp;&ensp;目前基本功能都已经实现，但在请求的细节上还有需要做的，目前只支持简单的字符串返回的后台服务器
+&ensp;&ensp;&ensp;&ensp;目前基本功能都已经实现并继承到Spring boot中，但在请求的细节上还有需要做的，目前只支持简单的字符串返回的后台服务器
 
-- 网关服务端：接收用户请求
+- 网关服务端：接收用户请求（Spring方式自启动）
 - 网关客户端：返回后台服务，得到响应数据
-- 路由模块：解析服务端的请求地址，得到后台服务器对应地址，并对同一个服务器集群进行负载均衡
-- 过滤模块：对请求和响应进行过滤处理
+- 路由模块：解析服务端的请求地址，得到后台服务器对应地址，并对同一个服务器集群进行负载均衡（AOP）
+- 过滤模块：对请求和响应进行过滤处理（AOP）
     
 ## 工程运行说明
 - 网关程序入口：\src\main\java\com\gateway\GateWayApplication.java
@@ -47,11 +47,11 @@
 &ensp;&ensp;&ensp;&ensp;目前系统分为四个模块：server模块、route模块、client模块、filter模块
 
 - server模块：接收用户的请求，经过route模块解析后得到目标服务地址，client模块发送请求得到结果后，server返回给用户
-- route模块：读取配置文件，加载路由配置，将不同的请求发送到不同的服务器
+- route模块：读取配置文件，加载路由配置，将不同的请求发送到不同的服务器，通过注解配置到Client中
 - client模块：发送请求到后台服务器，返回响应给server模块；目前集成了第三方异步非阻塞客户端和自写的同步非阻塞客户端
-    - ThirdClientAsync:第三方异步非阻塞客户端
+    - ~~ThirdClientAsync:第三方异步非阻塞客户端（V1.6后废弃）~~
     - CustomClientAsync：自学的同步非阻塞，目前还不完善，某些bug导致响应没法返回，但正常运行的话，性能还行
-- Filter模块：对请求和返回进行处理，内置将请求方法都设置为POST，返回头中添加GATEWAY信息
+- Filter模块：对请求和返回进行处理，内置将请求方法都设置为POST，返回头中添加GATEWAY信息；通过注解方式配置到Client中
 
 &ensp;&ensp;&ensp;&ensp;类似于NGINX，将用户请求根据配置转发到相应的后端服务程序中。目前还不支持restful json的请求。
 
@@ -104,7 +104,7 @@ ClientCenter.getInstance().init(CUSTOM_CLIENT_ASYNC, clientGroup);
 ClientCenter.getInstance().init(THIRD_CLIENT_ASYNC, clientGroup);
 ```
 
-### 测试结果
+### 测试结果（基于V1.5版本测试）
 &ensp;&ensp;&ensp;&ensp;这里压测一下网关，基本命令如下，在2分钟左右基本能得到稳定值，不再大幅度抖动
 
 ```shell script
@@ -423,6 +423,19 @@ public class ClientCenter {
 }
 ```
 
+### V1.6
+#### 更新说明
+- 工程集成到 Spring Boot，改为 Spring Boot 方式启动
+- Server、Filter、Route设置为了自启动
+- Filter设置了注解生效（AOP）
+- Route设置了注解生效（AOP）
+- 标记废弃ClientCenter和ThirdClientAsync，在Spring Boot方式中不再使用，只使用CustomClientAsync
+
+#### 代码说明
+- annotation、aspect：使用Spring Boot注解切面方式实现了Filter和Route的AOP
+- Server、RouteTable、Filter：都继承了ApplicationRunner，实现自启动，并标注了启动的优先级
+- Server、CustomClientAsync：参数配置设置在application.properties中
+
  
 ## TODO LIST
 - 1. 10-讲网关的frontend/backend/filter/router/线程池都改造成Spring配置方式；
@@ -441,6 +454,7 @@ public class ClientCenter {
 - [Netty中ChannelHandler共享数据的方式](https://blog.csdn.net/u013721793/article/details/51204029)
 - [In Netty 4, what's the difference between ctx.close and ctx.channel.close?](https://stackoverflow.com/questions/21240981/in-netty-4-whats-the-difference-between-ctx-close-and-ctx-channel-close)
 - [How to write a high performance Netty Client](https://stackoverflow.com/questions/8444267/how-to-write-a-high-performance-netty-client)
+- [在java中获取URL的域名或IP与端口](https://blog.csdn.net/u013217757/article/details/53838250)
 
 ### 网关
 - [如何设计一个亿级网关(API Gateway)](http://woshinlper.com/system-design/micro-service/API%E7%BD%91%E5%85%B3/)
@@ -455,4 +469,12 @@ public class ClientCenter {
 ### 多线程
 - [线程池最佳实践！安排！](https://juejin.im/post/6844904186400899086)
 - [JAVA 拾遗 --Future 模式与 Promise 模式](https://www.cnkirito.moe/future-and-promise/)
+
+### Spring boot
+- [Spring Boot AOP之对请求的参数入参与返回结果进行拦截处理](https://blog.csdn.net/puhaiyang/article/details/)
+- [Implementing a Custom Spring AOP Annotation](https://www.baeldung.com/spring-aop-annotation)
+- [spring boot：ApplicationRunner和CommandLineRunner用法区别](https://blog.csdn.net/weixin_38362455/article/details/83023025)
+- [SpringBoot之退出服务（exit）时调用自定义的销毁方法](https://blog.csdn.net/zknxx/article/details/52204036)
+- [springboot自定义随项目启动自动加载的类和方法](https://blog.csdn.net/Seven71111/article/details/105861787)
+- [spring boot 获取properties 属性值 多种方式](https://blog.csdn.net/zhongzunfa/article/details/78644362)
 

@@ -21,7 +21,7 @@ public class RouteTable implements ApplicationRunner {
 
     static final private RouteTableSingleton ROUTE = RouteTableSingleton.getInstance();
 
-    static public void initTable() {
+    static void initTable() {
         ROUTE.readJsonConfig();
     }
 
@@ -35,7 +35,7 @@ public class RouteTable implements ApplicationRunner {
     }
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         RouteTable.initTable();
         logger.info("Route table init successfully");
     }

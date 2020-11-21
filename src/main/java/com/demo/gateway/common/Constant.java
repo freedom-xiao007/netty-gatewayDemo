@@ -4,6 +4,7 @@ package com.demo.gateway.common;
  * 常量
  * @author lw
  */
+@Deprecated
 public class Constant {
     /**
      * 自定义异步非阻塞客户端

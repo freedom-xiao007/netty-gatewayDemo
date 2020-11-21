@@ -40,7 +40,7 @@ public class CustomClientAsyncHandler extends SimpleChannelInboundHandler<FullHt
     /**
      * 阻塞等待结果后返回
      * @return 后台服务器响应
-     * @throws InterruptedException
+     * @throws InterruptedException exception
      */
     public FullHttpResponse getResponse() throws InterruptedException {
         latch.await();

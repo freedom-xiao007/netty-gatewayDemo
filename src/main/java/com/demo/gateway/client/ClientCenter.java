@@ -8,8 +8,6 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 
 /**
@@ -18,7 +16,7 @@ import org.springframework.stereotype.Component;
  * 起一个中介中用，获取后台服务器结果，调用server outbound返回结果
  * @author lw
  */
-@Component
+@Deprecated
 public class ClientCenter {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientCenter.class);

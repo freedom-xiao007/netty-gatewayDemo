@@ -1,6 +1,5 @@
 package com.demo.gateway.server;
 
-import com.demo.gateway.client.ClientCenter;
 import com.demo.gateway.client.CustomClientAsync;
 import com.demo.gateway.common.CreatResponse;
 import com.demo.gateway.common.CreateRequest;
@@ -8,7 +7,6 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * @author lw

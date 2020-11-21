@@ -13,7 +13,7 @@ public class ServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private final CustomClientAsync client;
 
-    public ServerInitializer(CustomClientAsync clientAsync) {
+    ServerInitializer(CustomClientAsync clientAsync) {
         this.client = clientAsync;
     }
 

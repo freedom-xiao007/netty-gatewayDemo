@@ -20,52 +20,52 @@ public class Filter implements ApplicationRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomClientAsync.class);
 
-    static final FilterSingleton filterSingleton = FilterSingleton.getInstance();
+    private static final FilterSingleton FILTER_SINGLETON = FilterSingleton.getInstance();
 
     static private void addRequestFilter(RequestFilter requestFrontFilter) {
-        filterSingleton.registerRequestFrontFilter(requestFrontFilter);
+        FILTER_SINGLETON.registerRequestFrontFilter(requestFrontFilter);
     }
 
     static private void addResponseFilter(ResponseFilter responseBackendFilter) {
-        filterSingleton.registerResponseBackendFilter(responseBackendFilter);
+        FILTER_SINGLETON.registerResponseBackendFilter(responseBackendFilter);
     }
 
     /**
      * 在这个方法中添加Request的过滤操作类,在启动函数中进行调用
      */
-    static public void initRequestFilter() {
+    static void initRequestFilter() {
         addRequestFilter(new MethodToPost());
     }
 
     /**
      * 在这个方法中添加Response的过滤操作类，在启动函数中进行调用
      */
-    static public void initResponseFilter() {
+    static void initResponseFilter() {
         addResponseFilter(new AddGatewayInfo());
     }
 
     /**
      * 遍历Request过滤操作链，对Request进行处理，在Server inbound接收到Request后进行调用
-     * @param request
+     * @param request request
      */
     static public void requestProcess(HttpRequest request) {
-        for (RequestFilter filter: filterSingleton.getRequestFrontFilterList()) {
+        for (RequestFilter filter: FILTER_SINGLETON.getRequestFrontFilterList()) {
             filter.filter(request);
         }
     }
 
     /**
      * 调用Response过滤操作链，对Response进行处理，在Server outbound发送Response前进行调用
-     * @param response
+     * @param response response
      */
     static public void responseProcess(HttpResponse response) {
-        for (ResponseFilter filter: filterSingleton.getResponseBackendFilters()) {
+        for (ResponseFilter filter: FILTER_SINGLETON.getResponseBackendFilters()) {
             filter.filter(response);
         }
     }
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         Filter.initRequestFilter();
         Filter.initResponseFilter();
         logger.info("Filter line load successfully");

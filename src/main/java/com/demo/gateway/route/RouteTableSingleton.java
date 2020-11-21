@@ -2,12 +2,12 @@ package com.demo.gateway.route;
 
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -30,7 +30,7 @@ public class RouteTableSingleton {
         }
     }
 
-    public static RouteTableSingleton getInstance(){
+    static RouteTableSingleton getInstance(){
         return EnumSingleton.INSTANCE.getSingleton();
     }
 
@@ -109,11 +109,14 @@ public class RouteTableSingleton {
     /**
      * 读取JSON配置文件，初始化路由和负载均衡设置
      */
+    @SuppressWarnings("unchecked")
     void readJsonConfig() {
-        String fileName = "F:\\Code\\Java\\netty-gatewayDemo\\src\\main\\resources\\route.json";
+        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("route.json");
+        assert inputStream != null;
         Gson gson = new Gson();
-        try (Reader reader = new FileReader(fileName)) {
-            Map<String, Object> config = gson.fromJson(reader, Map.class);
+        Type mapType = new TypeToken<Map<String, Object>>(){}.getType();
+        try (Reader reader = new InputStreamReader(inputStream)) {
+            Map<String, Object> config = gson.fromJson(reader, mapType);
             logger.info(config.toString());
 
             server = (Map<String, List<String>>) config.get("server");

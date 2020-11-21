@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.stereotype.Component;
 
@@ -39,9 +40,17 @@ public class CustomClientAsync implements Client, DisposableBean {
     private ConcurrentHashMap<Channel, Channel> channelPool = new ConcurrentHashMap<>();
     private EventLoopGroup clientGroup = new NioEventLoopGroup(new ThreadFactoryBuilder().setNameFormat("client work-%d").build());
 
+    @Value("${client.SO_REUSEADDR}")
+    private boolean soReuseaddr;
+    @Value("${client.TCP_NODELAY}")
+    private boolean tcpNodelay;
+    @Value("${client.AUTO_CLOSE}")
+    private boolean autoClose;
+    @Value("${client.SO_KEEPALIVE}")
+    private boolean soKeepalive;
+
     CustomClientAsync() {
     }
-
 
     /**
      * 调用channel发送请求，从handler中获取响应结果
@@ -79,9 +88,6 @@ public class CustomClientAsync implements Client, DisposableBean {
         CustomClientAsyncHandler handler = new CustomClientAsyncHandler();
         handler.setLatch(new CountDownLatch(1));
         URI uri = new URI(request.uri());
-        System.out.println(request.uri());
-        System.out.println(uri.getHost());
-        System.out.println(uri.getPort());
         Channel channel = createChannel(uri.getHost(), uri.getPort());
         channel.pipeline().addLast("clientHandler", handler);
         channelPool.put(serverChannel, channel);
@@ -100,10 +106,10 @@ public class CustomClientAsync implements Client, DisposableBean {
     private Channel createChannel(String address, int port) throws InterruptedException {
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(clientGroup)
-                .option(ChannelOption.SO_REUSEADDR, true)
-                .option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.AUTO_CLOSE, true)
-                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.SO_REUSEADDR, soReuseaddr)
+                .option(ChannelOption.TCP_NODELAY, tcpNodelay)
+                .option(ChannelOption.AUTO_CLOSE, autoClose)
+                .option(ChannelOption.SO_KEEPALIVE, soKeepalive)
                 .channel(NioSocketChannel.class)
                 .handler(new CustomClientAsyncInitializer());
         return bootstrap.connect(address, port).sync().channel();
@@ -122,6 +128,9 @@ public class CustomClientAsync implements Client, DisposableBean {
         return null;
     }
 
+    /**
+     * 关闭线程池
+     */
     @Override
     public void destroy() {
         clientGroup.shutdownGracefully();
