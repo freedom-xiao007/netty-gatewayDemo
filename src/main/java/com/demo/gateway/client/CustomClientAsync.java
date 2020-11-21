@@ -3,6 +3,8 @@ package com.demo.gateway.client;
 import com.demo.gateway.annotation.RequestFilterAnnotation;
 import com.demo.gateway.annotation.ResponseFilterAnnotation;
 import com.demo.gateway.annotation.RouteAnnotation;
+import com.demo.gateway.common.CreatResponse;
+import com.demo.gateway.jms.MessageCenter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -21,24 +23,29 @@ import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 
 /**
- * 自己实现的同步阻塞客户端，性能勉强达到要求
+ * 自己实现的异步非阻塞阻塞客户端
  * @author lw
  */
 @Component
 @EnableAspectJAutoProxy(exposeProxy = true)
-public class CustomClientAsync implements Client, DisposableBean {
+public class CustomClientAsync extends Client implements DisposableBean, ClientAsync {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomClientAsync.class);
 
-    /**
-     * 使用Map来保存用过的Channel，看下次相同的后台服务是否能够重用，起一个类似缓存的作用
-     */
-    private ConcurrentHashMap<Channel, Channel> channelPool = new ConcurrentHashMap<>();
     private EventLoopGroup clientGroup = new NioEventLoopGroup(new ThreadFactoryBuilder().setNameFormat("client work-%d").build());
+    private final int cpuProcessors = Runtime.getRuntime().availableProcessors() * 2;
+    /**
+     * 空闲Channel缓存池
+     */
+    private ConcurrentHashMap<String, ArrayBlockingQueue<Channel>> freeChannels = new ConcurrentHashMap<>();
+    /**
+     * 繁忙Channel持有（繁忙池），起一个
+     */
+    private ConcurrentHashMap<String, ConcurrentHashMap<Integer, Channel>> busyChannels = new ConcurrentHashMap<>();
 
     @Value("${client.SO_REUSEADDR}")
     private boolean soReuseaddr;
@@ -49,51 +56,106 @@ public class CustomClientAsync implements Client, DisposableBean {
     @Value("${client.SO_KEEPALIVE}")
     private boolean soKeepalive;
 
-    CustomClientAsync() {
+    CustomClientAsync() {}
+
+    /**
+     * 获取 client channel 发送请求
+     * 发生错误时需要将 channel 放回缓存池
+     * @param request 请求
+     */
+    @Override
+    @RouteAnnotation
+    @RequestFilterAnnotation
+    public void sendRequest(FullHttpRequest request, int channelHashCode) {
+        Channel channel;
+        try {
+            channel = getChannel(request, channelHashCode);
+        } catch (URISyntaxException | InterruptedException e) {
+            e.printStackTrace();
+            returnResponse(CreatResponse.creat404(request), channelHashCode, request);
+            return;
+        }
+
+        CustomClientAsyncHandler handler = new CustomClientAsyncHandler(this, channelHashCode, request);
+        channel.pipeline().replace("clientHandler", "clientHandler", handler);
+        try {
+            channel.writeAndFlush(request).sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            logger.error("client channel send failed");
+            repayChannel(request, channelHashCode);
+        }
     }
 
     /**
-     * 调用channel发送请求，从handler中获取响应结果
-     * @param request 请求
-     * @param serverChannel server outbound
-     * @return 响应
+     * 获取Client Channel
+     *
+     * 一、如果不存在此ip地址和端口的Channel缓存池，直接新建，加入繁忙池（下面将ip地址和端口称为key）
+     *
+     * 二、存在key的Channel缓存池
+     *      1.如果有空闲的Channel，从空闲池中取出，放入繁忙池
+     *
+     *      2.如果此key的繁忙池中的channel数量小于 CPU核心*2，则新建一个channel，放入繁忙池
+     *
+     *      3.上面两种情况都不成立，则阻塞一直等待缓冲池中有channel可用时返回，从空闲池中取出，放入繁忙池
+     *
+     * @param request request
+     * @param channelHashCode server outbound hashcode
+     * @return channel
+     * @throws URISyntaxException exception
      * @throws InterruptedException exception
      */
-    private FullHttpResponse getResponse(FullHttpRequest request, Channel serverChannel) throws InterruptedException, URISyntaxException {
-        // 查看缓存池中是否有可重用的channel
-        if (channelPool.containsKey(serverChannel)) {
-            Channel channel = channelPool.get(serverChannel);
-            if (!channel.isActive() || !channel.isWritable() || !channel.isOpen()) {
-                logger.debug("Channel can't reuse");
+    private Channel getChannel(FullHttpRequest request, int channelHashCode) throws URISyntaxException, InterruptedException {
+        URI uri = new URI(request.uri());
+        String key = uri.getHost() + "::" + uri.getPort();
+
+        Channel channel;
+
+        if (!freeChannels.containsKey(key)) {
+            channel = createChannel(uri.getHost(), uri.getPort());
+        } else {
+            if (!freeChannels.get(key).isEmpty()) {
+                channel = freeChannels.get(key).take();
+            } else if (busyChannels.get(key).size() < cpuProcessors) {
+                channel = createChannel(uri.getHost(), uri.getPort());
             } else {
-                try {
-                    channel.pipeline().removeLast();
-                    CustomClientAsyncHandler handler = new CustomClientAsyncHandler();
-                    handler.setLatch(new CountDownLatch(1));
-                    channel.pipeline().addLast("clientHandler", handler);
-                    channel.writeAndFlush(request.retain()).sync();
-                    return handler.getResponse();
-                } catch (Exception e) {
-                    logger.debug("channel reuse send msg failed!");
-                    channel.close();
-                    channelPool.remove(serverChannel);
-                }
-                logger.debug("Handler is busy, please user new channel");
+                channel = freeChannels.get(key).take();
             }
         }
 
+        ConcurrentHashMap<Integer, Channel> requestMapChannel = busyChannels.getOrDefault(key,
+                new ConcurrentHashMap<>(cpuProcessors));
+        requestMapChannel.put(channelHashCode, channel);
+        busyChannels.put(key, requestMapChannel);
 
-        // 没有或者不可用则新建
-        // 并将最终的handler添加到pipeline中，拿到结果后返回
-        CustomClientAsyncHandler handler = new CustomClientAsyncHandler();
-        handler.setLatch(new CountDownLatch(1));
-        URI uri = new URI(request.uri());
-        Channel channel = createChannel(uri.getHost(), uri.getPort());
-        channel.pipeline().addLast("clientHandler", handler);
-        channelPool.put(serverChannel, channel);
+        return channel;
+    }
 
-        channel.writeAndFlush(request).sync();
-        return handler.getResponse();
+    /**
+     * 归还channel到缓冲池
+     * 缓存池添加，繁忙池删除
+     * @param request request
+     * @param channelHashCode server outbound hashcode
+     */
+    private void repayChannel(FullHttpRequest request, int channelHashCode) {
+        URI uri;
+        try {
+            uri = new URI(request.uri());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            logger.error("uri parse error:" + request.uri());
+            return;
+        }
+
+        String key = uri.getHost() + "::" + uri.getPort();
+        Channel channel = busyChannels.get(key).get(channelHashCode);
+
+        if (!freeChannels.containsKey(key)) {
+            freeChannels.put(key, new ArrayBlockingQueue<>(cpuProcessors));
+        }
+        freeChannels.get(key).add(channel);
+
+        busyChannels.get(key).remove(channelHashCode);
     }
 
     /**
@@ -111,21 +173,8 @@ public class CustomClientAsync implements Client, DisposableBean {
                 .option(ChannelOption.AUTO_CLOSE, autoClose)
                 .option(ChannelOption.SO_KEEPALIVE, soKeepalive)
                 .channel(NioSocketChannel.class)
-                .handler(new CustomClientAsyncInitializer());
+                .handler(new CustomClientInitializer());
         return bootstrap.connect(address, port).sync().channel();
-    }
-
-    @Override
-    @RouteAnnotation
-    @RequestFilterAnnotation
-    @ResponseFilterAnnotation
-    public FullHttpResponse execute(FullHttpRequest request, Channel serverOutbound) {
-        try {
-            return getResponse(request, serverOutbound);
-        } catch (InterruptedException | URISyntaxException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     /**
@@ -134,5 +183,24 @@ public class CustomClientAsync implements Client, DisposableBean {
     @Override
     public void destroy() {
         clientGroup.shutdownGracefully();
+    }
+
+    /**
+     * 从MessageCenter 中获取对应的 server outbound,返回响应,归还 client channel
+     * 接收并返回响应后才将channel放回缓冲池是为了让 client channel一个时间点处理特定的请求即可，避免冲突
+     * @param response response
+     * @param channelHashCode server outbound hash code
+     * @param request request
+     */
+    @ResponseFilterAnnotation
+    void returnResponse(FullHttpResponse response, int channelHashCode, FullHttpRequest request) {
+        try {
+            MessageCenter.getChannel(channelHashCode).writeAndFlush(response).sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            logger.error("Server inbound can't use");
+        }
+
+        repayChannel(request, channelHashCode);
     }
 }

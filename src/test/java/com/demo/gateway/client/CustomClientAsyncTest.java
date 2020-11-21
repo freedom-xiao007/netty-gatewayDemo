@@ -10,7 +10,7 @@ import java.net.URISyntaxException;
 
 public class CustomClientAsyncTest {
 
-    private CustomClientAsync clientAsync = new CustomClientAsync();
+    private CustomClientSync clientAsync = new CustomClientSync();
 
     private final String URL = System.getProperty("url", "http://www.baidu.com:80/");
 
@@ -33,13 +33,6 @@ public class CustomClientAsyncTest {
         request.headers().set(HttpHeaderNames.HOST, uri.getHost());
         request.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-
-        // Set some example cookies.
-        request.headers().set(
-                HttpHeaderNames.COOKIE,
-                io.netty.handler.codec.http.cookie.ClientCookieEncoder.STRICT.encode(
-                        new io.netty.handler.codec.http.cookie.DefaultCookie("my-cookie", "foo"),
-                        new DefaultCookie("another-cookie", "bar")));
         return request;
     }
 }

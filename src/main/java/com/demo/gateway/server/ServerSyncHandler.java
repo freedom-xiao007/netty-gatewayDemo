@@ -1,23 +1,27 @@
 package com.demo.gateway.server;
 
-import com.demo.gateway.client.CustomClientAsync;
+import com.demo.gateway.client.CustomClientSync;
 import com.demo.gateway.common.CreatResponse;
 import com.demo.gateway.common.CreateRequest;
-import io.netty.channel.*;
-import io.netty.handler.codec.http.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 /**
+ * 同步非阻塞服务端handler，配置同步非阻塞客户端进行使用{CustomClientSync}
  * @author lw
  */
-public class ServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class ServerSyncHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServerHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ServerSyncHandler.class);
 
-    private final CustomClientAsync client;
+    private final CustomClientSync client;
 
-    ServerHandler(CustomClientAsync clientAsync) {
+    ServerSyncHandler(CustomClientSync clientAsync) {
         this.client = clientAsync;
     }
 

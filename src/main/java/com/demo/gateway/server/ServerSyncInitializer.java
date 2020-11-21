@@ -1,19 +1,21 @@
 package com.demo.gateway.server;
 
-import com.demo.gateway.client.CustomClientAsync;
+import com.demo.gateway.client.CustomClientSync;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
 
 /**
  * @author lw
  */
-public class ServerInitializer extends ChannelInitializer<SocketChannel> {
+public class ServerSyncInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final CustomClientAsync client;
+    private final CustomClientSync client;
 
-    ServerInitializer(CustomClientAsync clientAsync) {
+    ServerSyncInitializer(CustomClientSync clientAsync) {
         this.client = clientAsync;
     }
 
@@ -24,6 +26,6 @@ public class ServerInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("encoder", new HttpResponseEncoder());
         pipeline.addLast("decoder", new HttpRequestDecoder());
         pipeline.addLast("aggregator", new HttpObjectAggregator(1048576));
-        pipeline.addLast("my handler", new ServerHandler(client));
+        pipeline.addLast("my handler", new ServerSyncHandler(client));
     }
 }

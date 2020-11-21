@@ -1,6 +1,7 @@
 package com.demo.gateway.server;
 
-import com.demo.gateway.client.CustomClientAsync;
+import com.demo.gateway.client.CustomClientSync;
+import com.demo.gateway.jms.RequestProducerController;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -11,6 +12,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -32,10 +34,13 @@ public class Server implements ApplicationRunner, DisposableBean {
 
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
+    @Autowired
+    private CustomClientSync clientSync;
+
     private final
     Environment environment;
 
-    private final CustomClientAsync clientAsync;
+    private final RequestProducerController producer;
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup serverGroup;
@@ -46,9 +51,9 @@ public class Server implements ApplicationRunner, DisposableBean {
     @Value("${server.AUTO_CLOSE}")
     private boolean autoClose;
 
-    public Server(Environment environment, CustomClientAsync clientAsync) {
+    public Server(Environment environment, RequestProducerController producer) {
         this.environment = environment;
-        this.clientAsync = clientAsync;
+        this.producer = producer;
     }
 
     @Override
@@ -68,7 +73,10 @@ public class Server implements ApplicationRunner, DisposableBean {
                 .option(ChannelOption.AUTO_CLOSE, autoClose)
                 .option(ChannelOption.SO_BACKLOG, 1024)
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new ServerInitializer(clientAsync));
+                // 使用异步非阻塞方式
+                .childHandler(new ServerAsyncInitializer(producer));
+                // 使用同步非阻塞方式
+//                .childHandler(new ServerSyncInitializer(clientSync));
 
         int port = Integer.parseInt(Objects.requireNonNull(environment.getProperty("server.port")));
         Channel channel = serverBootstrap.bind(port).sync().channel();

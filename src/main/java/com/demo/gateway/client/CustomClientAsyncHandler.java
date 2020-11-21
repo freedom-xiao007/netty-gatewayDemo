@@ -3,9 +3,10 @@ package com.demo.gateway.client;
 import com.demo.gateway.common.CreatResponse;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 
-import java.util.concurrent.CountDownLatch;
+import java.net.URISyntaxException;
 
 /**
  * 这里使用并发的等待-通知机制来拿到结果
@@ -13,14 +14,20 @@ import java.util.concurrent.CountDownLatch;
  */
 public class CustomClientAsyncHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
 
-    private CountDownLatch latch;
-    private FullHttpResponse response;
+    private final CustomClientAsync clientAsync;
+    private final int messageHashCode;
+    private final FullHttpRequest request;
+
+    public CustomClientAsyncHandler(CustomClientAsync clientAsync, int messageHashCode, FullHttpRequest request) {
+        this.clientAsync = clientAsync;
+        this.messageHashCode = messageHashCode;
+        this.request = request;
+    }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) {
-        // 拿到结果后再释放锁
-        response = CreatResponse.createResponse(msg);
-        latch.countDown();
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws URISyntaxException, InterruptedException {
+        FullHttpResponse response = CreatResponse.createResponse(msg);
+        clientAsync.returnResponse(response, messageHashCode, request);
     }
 
     @Override
@@ -29,21 +36,4 @@ public class CustomClientAsyncHandler extends SimpleChannelInboundHandler<FullHt
         ctx.close();
     }
 
-    /**
-     * 锁的初始化
-     * @param latch CountDownLatch
-     */
-    void setLatch(CountDownLatch latch) {
-        this.latch = latch;
-    }
-
-    /**
-     * 阻塞等待结果后返回
-     * @return 后台服务器响应
-     * @throws InterruptedException exception
-     */
-    public FullHttpResponse getResponse() throws InterruptedException {
-        latch.await();
-        return response;
-    }
 }

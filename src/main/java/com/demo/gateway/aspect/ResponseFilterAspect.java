@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ResponseFilterAspect {
 
-    @Pointcut("@annotation(com.demo.gateway.annotation.RequestFilterAnnotation)")
+    @Pointcut("@annotation(com.demo.gateway.annotation.ResponseFilterAnnotation)")
     public void clientExecute() {}
 
     @AfterReturning(value = "clientExecute()", returning = "result")

@@ -23,7 +23,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
  * https://github.com/AsyncHttpClient/async-http-client
  */
 @Deprecated
-public class ThirdClientAsync implements Client {
+public class ThirdClientAsync {
 
     private AsyncHttpClient asyncHttpClient = asyncHttpClient();
 
@@ -55,7 +55,6 @@ public class ThirdClientAsync implements Client {
     }
 
 
-    @Override
     public FullHttpResponse execute(FullHttpRequest request, Channel serverOutbound) {
         try {
             return getResponse(request.uri());

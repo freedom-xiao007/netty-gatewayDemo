@@ -21,7 +21,7 @@ public class ClientCenter {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientCenter.class);
 
-    private static final CustomClientAsync client = new CustomClientAsync();
+    private static final CustomClientSync client = new CustomClientSync();
 
     /**
      * 将请求转发到后台服务器，获得响应后返回给用户

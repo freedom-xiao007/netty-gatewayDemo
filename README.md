@@ -20,12 +20,36 @@
 ):这篇强烈推荐，仔细看完，将其中的代码自己敲一遍（不要复制，代码是手艺活，得亲自上手），搞完你对netty写一些简单的东西差不多就掌握了
 
 - [Documentation](https://netty.io/wiki/index.html):总文档，API、变化等有空也可以点点，重要的是例子（建议直接拉取git仓库的源码，网页上看着有点不方便）
-    - [Snoop](https://netty.io/4.1/xref/io/netty/example/http/snoop/package-summary.html) ‐ 构建自己的轻量级HTTP客户端和服务器,Http
-    服务端和客户端示例，写网关的基础参考
+    - [Snoop](https://netty.io/4.1/xref/io/netty/example/http/snoop/package-summary.html) ‐ 构建自己的轻量级HTTP客户端和服务器,Http服务端和客户端示例，写网关的基础参考
     - Proxy：这个也在示例里面，代理的实现例子，对网关实现也有参考价值
     
     
     
+## 工程运行说明
+- 网关程序入口：\src\main\java\com\gateway\GateWayApplication.java
+- 后台服务程序入口：src\main\java\com\netty\example\helloworld\HttpHelloWorldServer
+
+```shell script
+git clone https://github.com/lw1243925457/netty-gatewayDemo.git
+
+# 特别说明，运行异步非阻塞方式，需要activeMq，因为用到了jms,相关代码在Server.java 中，进行相应的选择注释即可
+# // 使用异步非阻塞方式
+# .childHandler(new ServerAsyncInitializer(producer));
+# // 使用同步非阻塞方式
+# .childHandler(new ServerSyncInitializer(clientSync));
+
+# 记得运行HttpHelloWorldServer或者在route.json配置自己的后台服务转发映射
+
+# 运行方式一、idea 打开，入口类：DemoApplication
+
+# 运行方式二：工程目录下运行下面的命令
+mvn spring-boot:run
+
+# 访问下面的链接即可，示例
+# http://localhost:81/group1/
+```
+
+
 ## 工程说明
 &ensp;&ensp;&ensp;&ensp;目前基本功能都已经实现并继承到Spring boot中，但在请求的细节上还有需要做的，目前只支持简单的字符串返回的后台服务器
 
@@ -33,13 +57,9 @@
 - 网关客户端：返回后台服务，得到响应数据
 - 路由模块：解析服务端的请求地址，得到后台服务器对应地址，并对同一个服务器集群进行负载均衡（AOP）
 - 过滤模块：对请求和响应进行过滤处理（AOP）
-    
-## 工程运行说明
-- 网关程序入口：\src\main\java\com\gateway\GateWayApplication.java
-- 后台服务程序入口：src\main\java\com\netty\example\helloworld\HttpHelloWorldServer
-    
-## 相关模块
-&ensp;&ensp;&ensp;&ensp;当前的网关大体模块如下图：
+
+## 大致代码数据流向说明
+&ensp;&ensp;&ensp;&ensp;当前的网关数据流向如下图：
 
 ![](https://github.com/lw1243925457/JAVA-000/blob/main/Week_03/gateway.png)
     
@@ -50,8 +70,10 @@
 - route模块：读取配置文件，加载路由配置，将不同的请求发送到不同的服务器，通过注解配置到Client中
 - client模块：发送请求到后台服务器，返回响应给server模块；目前集成了第三方异步非阻塞客户端和自写的同步非阻塞客户端
     - ~~ThirdClientAsync:第三方异步非阻塞客户端（V1.6后废弃）~~
-    - CustomClientAsync：自学的同步非阻塞，目前还不完善，某些bug导致响应没法返回，但正常运行的话，性能还行
+    - CustomClientSync：同步非阻塞，基本正常运行的话，性能还行
+    - CustomClientAsync：异步非阻塞，需要结合jms进行使用，达到了全链路异步，就是性能不行，稳定性还行
 - Filter模块：对请求和返回进行处理，内置将请求方法都设置为POST，返回头中添加GATEWAY信息；通过注解方式配置到Client中
+- jms：jms相关代码，使用一个 request topic 来让 ServerAsyncHandler 向 CustomClientAsync 直接传递信息，client收到信息后进行相应的处理
 
 &ensp;&ensp;&ensp;&ensp;类似于NGINX，将用户请求根据配置转发到相应的后端服务程序中。目前还不支持restful json的请求。
 
@@ -436,11 +458,17 @@ public class ClientCenter {
 - Server、RouteTable、Filter：都继承了ApplicationRunner，实现自启动，并标注了启动的优先级
 - Server、CustomClientAsync：参数配置设置在application.properties中
 
- 
+### V1.7
+#### 更新说明
+- 集成 Spring boot Jms
+- 新增异步非阻塞客户端
+
+#### 代码说明
+- CustomClientAsync:异步非阻塞客户端，用了新的client channel 缓存方法，返回代码触发在handler中，达到全链路异步
+- jms：jms相关代码，使用一个 request topic 来让 ServerAsyncHandler 向 CustomClientAsync 直接传递信息，client收到信息后进行相应的处理
+
+
 ## TODO LIST
-- 1. 10-讲网关的frontend/backend/filter/router/线程池都改造成Spring配置方式；
-- 2. 20-基于AOP改造Netty网关，filter和router使用AOP方式实现；
-- 3. 30-基于前述改造，将网关请求前后端分离，中级使用JMS传递消息；
 
  
 ## 参考链接
@@ -455,6 +483,7 @@ public class ClientCenter {
 - [In Netty 4, what's the difference between ctx.close and ctx.channel.close?](https://stackoverflow.com/questions/21240981/in-netty-4-whats-the-difference-between-ctx-close-and-ctx-channel-close)
 - [How to write a high performance Netty Client](https://stackoverflow.com/questions/8444267/how-to-write-a-high-performance-netty-client)
 - [在java中获取URL的域名或IP与端口](https://blog.csdn.net/u013217757/article/details/53838250)
+- [Java获取可用处理器的数目](https://blog.csdn.net/tterminator/article/details/53287329)
 
 ### 网关
 - [如何设计一个亿级网关(API Gateway)](http://woshinlper.com/system-design/micro-service/API%E7%BD%91%E5%85%B3/)
@@ -469,6 +498,7 @@ public class ClientCenter {
 ### 多线程
 - [线程池最佳实践！安排！](https://juejin.im/post/6844904186400899086)
 - [JAVA 拾遗 --Future 模式与 Promise 模式](https://www.cnkirito.moe/future-and-promise/)
+- [Java并发编程-阻塞队列(BlockingQueue)的实现原理](https://blog.csdn.net/chenchaofuck1/article/details/51660119)
 
 ### Spring boot
 - [Spring Boot AOP之对请求的参数入参与返回结果进行拦截处理](https://blog.csdn.net/puhaiyang/article/details/)
@@ -477,4 +507,9 @@ public class ClientCenter {
 - [SpringBoot之退出服务（exit）时调用自定义的销毁方法](https://blog.csdn.net/zknxx/article/details/52204036)
 - [springboot自定义随项目启动自动加载的类和方法](https://blog.csdn.net/Seven71111/article/details/105861787)
 - [spring boot 获取properties 属性值 多种方式](https://blog.csdn.net/zhongzunfa/article/details/78644362)
+
+#### JMS
+- [Messaging with JMS](https://spring.io/guides/gs/messaging-jms/)
+- [docker安装activemq](https://www.jianshu.com/p/9652e0641b99)
+- [ActiveMQ的queue以及topic两种消息处理机制分析](https://developer.aliyun.com/article/54162)
 
